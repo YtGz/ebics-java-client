@@ -64,6 +64,8 @@ public enum OrderType {
     ZAE,
     ZAG,
     ZAH,
+    ZAI,
+    ZAJ,
     ZAN,
     ZK1,
     ZK2,
