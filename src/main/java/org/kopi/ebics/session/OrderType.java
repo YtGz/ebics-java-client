@@ -60,6 +60,8 @@ public enum OrderType {
     HAA,
     HAC,
     PTK,
+    ZAD,
+    ZAE,
     ZAG,
     ZAH,
     ZAN,
