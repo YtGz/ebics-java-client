@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.interfaces;
@@ -29,7 +28,6 @@ import org.kopi.ebics.exception.EbicsException;
  * Initialization letters manager.
  * Manages the INI, HIA and the HPB letters.
  *
- * @author Hachani
  *
  */
 public interface LetterManager {
@@ -44,7 +42,7 @@ public interface LetterManager {
    * @throws IOException
    * @throws GeneralSecurityException
    */
-  public InitLetter createA005Letter(EbicsUser user)
+  InitLetter createA005Letter(EbicsUser user)
     throws GeneralSecurityException, IOException, EbicsException;
 
   /**
@@ -57,7 +55,7 @@ public interface LetterManager {
    * @throws IOException
    * @throws GeneralSecurityException
    */
-  public InitLetter createE002Letter(EbicsUser user)
+  InitLetter createE002Letter(EbicsUser user)
     throws GeneralSecurityException, IOException, EbicsException;
 
   /**
@@ -70,6 +68,6 @@ public interface LetterManager {
    * @throws IOException
    * @throws GeneralSecurityException
    */
-  public InitLetter createX002Letter(EbicsUser user)
+  InitLetter createX002Letter(EbicsUser user)
     throws GeneralSecurityException, IOException, EbicsException;
 }

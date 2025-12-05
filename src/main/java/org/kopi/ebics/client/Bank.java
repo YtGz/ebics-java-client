@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.client;
@@ -32,9 +31,8 @@ import org.kopi.ebics.interfaces.Savable;
 /**
  * Simple implementation of an EBICS bank.
  * This object is serializable to facilitate persisting of the values.
- * Save the the object whenever it needs to be saved.
+ * Save the object whenever it needs to be saved.
  *
- * @author Hachani
  *
  */
 public class Bank implements EbicsBank, Savable {
@@ -131,7 +129,7 @@ public class Bank implements EbicsBank, Savable {
 
     @Override
     public boolean useCertificate() {
-        return useCertificate;
+      return useCertificate;
     }
 
     @Override
@@ -139,7 +137,7 @@ public class Bank implements EbicsBank, Savable {
         this.useCertificate = useCertificate;
         needSave = true;
     }
-    
+
   @Override
   public void setBankKeys(RSAPublicKey e002Key, RSAPublicKey x002Key) {
     this.e002Key = e002Key;
@@ -167,13 +165,13 @@ public class Bank implements EbicsBank, Savable {
    * The bank URL
    * @serial
    */
-  private URL			url;
+  private final URL			url;
 
   /**
    * The bank host id
    * @serial
    */
-  private String		hostId;
+  private final String		hostId;
   
   /**
    * Does the bank use certificates for signing/crypting ?
@@ -185,7 +183,7 @@ public class Bank implements EbicsBank, Savable {
    * The bank name
    * @serial
    */
-  private String		name;
+  private final String		name;
 
   /**
    * The bank encryption digest

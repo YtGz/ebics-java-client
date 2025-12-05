@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.xml;
@@ -24,9 +23,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
 import org.kopi.ebics.exception.EbicsException;
-import org.kopi.ebics.schema.h003.EbicsRequestDocument;
+import org.kopi.ebics.interfaces.EbicsOrderType;
+import org.kopi.ebics.schema.h005.EbicsRequestDocument;
 import org.kopi.ebics.session.EbicsSession;
-import org.kopi.ebics.session.OrderType;
 import org.kopi.ebics.utils.Utils;
 
 
@@ -34,7 +33,6 @@ import org.kopi.ebics.utils.Utils;
  * The <code>TransferRequestElement</code> is the common root element
  * for all ebics transfer for the bank server.
  *
- * @author Hachani
  *
  */
 public abstract class TransferRequestElement extends DefaultEbicsRootElement {
@@ -46,11 +44,11 @@ public abstract class TransferRequestElement extends DefaultEbicsRootElement {
    * @param type the order type
    * @param segmentNumber the segment number to be sent
    * @param lastSegment is it the last segment?
-   * @param transactionID the transaction ID
+   * @param transactionId the transaction ID
    */
-  public TransferRequestElement(EbicsSession session,
+  protected TransferRequestElement(EbicsSession session,
                                 String name,
-                                OrderType type,
+                                EbicsOrderType type,
                                 int segmentNumber,
                                 boolean lastSegment,
                                 byte[] transactionId)
@@ -89,9 +87,7 @@ public abstract class TransferRequestElement extends DefaultEbicsRootElement {
 
     try {
       return MessageDigest.getInstance("SHA-256", "BC").digest(Utils.canonize(toByteArray()));
-    } catch (NoSuchAlgorithmException e) {
-      throw new EbicsException(e.getMessage());
-    } catch (NoSuchProviderException e) {
+    } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
       throw new EbicsException(e.getMessage());
     }
   }
@@ -101,7 +97,7 @@ public abstract class TransferRequestElement extends DefaultEbicsRootElement {
    * @return the order type element.
    */
   public String getOrderType() {
-    return type.toString();
+    return type.getCode();
   }
 
   @Override
@@ -124,7 +120,7 @@ public abstract class TransferRequestElement extends DefaultEbicsRootElement {
   protected int				segmentNumber;
   protected boolean			lastSegment;
   protected byte[]			transactionId;
-  private OrderType			type;
-  private String 			name;
+  private final EbicsOrderType type;
+  private final String 			name;
   private static final long 		serialVersionUID = -4212072825371398259L;
 }

@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.client;
@@ -33,7 +32,6 @@ import org.kopi.ebics.interfaces.Savable;
  * This object is not serializable, but it should be persisted every time it needs to be saved.
  * Persistence is achieved via <code>save(ObjectOutputStream)</code> and the matching constructor.
  *
- * @author Hachani
  *
  */
 public class Partner implements EbicsPartner, Savable {
@@ -66,7 +64,7 @@ public class Partner implements EbicsPartner, Savable {
    * @return the next order ID
    */
   public Integer getNextOrderId() {
-    return new Integer(orderId);
+    return Integer.valueOf(orderId);
   }
 
   /**
@@ -144,9 +142,9 @@ public class Partner implements EbicsPartner, Savable {
   // DATA MEMBERS
   // --------------------------------------------------------------------
 
-  private EbicsBank			bank;
+  private final EbicsBank			bank;
   private int				orderId = 10*36*36*36;
-  private String			partnerId;
+  private final String			partnerId;
   private transient boolean		needSave;
 
   private static final String		ALPHA_NUM_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";

@@ -14,11 +14,11 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.certificate;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -38,7 +38,6 @@ import org.kopi.ebics.interfaces.PasswordCallback;
 /**
  * Simple manager for EBICS certificates.
  *
- * @author hacheni
  *
  */
 public class CertificateManager {
@@ -54,15 +53,13 @@ public class CertificateManager {
    * @throws IOException
    */
   public void create() throws GeneralSecurityException, IOException {
-    Calendar		calendar;
+      Calendar calendar = Calendar.getInstance();
+      calendar.add(Calendar.DAY_OF_YEAR, X509Constants.DEFAULT_DURATION);
 
-    calendar = Calendar.getInstance();
-    calendar.add(Calendar.DAY_OF_YEAR, X509Constants.DEFAULT_DURATION);
-
-    createA005Certificate(new Date(calendar.getTimeInMillis()));
-    createX002Certificate(new Date(calendar.getTimeInMillis()));
-    createE002Certificate(new Date(calendar.getTimeInMillis()));
-    setUserCertificates();
+      createA005Certificate(new Date(calendar.getTimeInMillis()));
+      createX002Certificate(new Date(calendar.getTimeInMillis()));
+      createE002Certificate(new Date(calendar.getTimeInMillis()));
+      setUserCertificates();
   }
 
   /**
@@ -80,24 +77,23 @@ public class CertificateManager {
 
   /**
    * Creates the signature certificate.
-   * @param the expiration date of a the certificate.
+   * @param end the expiration date of a the certificate.
    * @throws GeneralSecurityException
    * @throws IOException
    */
   public void createA005Certificate(Date end) throws GeneralSecurityException, IOException {
-    KeyPair			keypair;
+      KeyPair keypair = KeyUtil.makeKeyPair(X509Constants.EBICS_KEY_SIZE);
+      a005Certificate = generator.generateA005Certificate(keypair, user.getDN(), new Date(), end);
+      a005PrivateKey = keypair.getPrivate();
+  }
 
-    keypair = KeyUtil.makeKeyPair(X509Constants.EBICS_KEY_SIZE);
-    a005Certificate = generator.generateA005Certificate(keypair,
-	                                                user.getDN(),
-	                                                new Date(),
-	                                                end);
-    a005PrivateKey = keypair.getPrivate();
+  X509Certificate getA005Certificate() {
+      return a005Certificate;
   }
 
   /**
    * Creates the authentication certificate.
-   * @param the expiration date of a the certificate.
+   * @param end the expiration date of a certificate.
    * @throws GeneralSecurityException
    * @throws IOException
    */
@@ -114,7 +110,7 @@ public class CertificateManager {
 
   /**
    * Creates the encryption certificate.
-   * @param the expiration date of a the certificate.
+   * @param end the expiration date of a the certificate.
    * @throws GeneralSecurityException
    * @throws IOException
    */
@@ -131,15 +127,11 @@ public class CertificateManager {
 
   /**
    * Saves the certificates in PKCS12 format
-   * @param path the certificates path
-   * @param pwdCallBack the password call back
-   * @throws GeneralSecurityException
-   * @throws IOException
    */
-  public void save(String path, PasswordCallback pwdCallBack)
+  public void save(File directory, PasswordCallback pwdCallBack)
     throws GeneralSecurityException, IOException
   {
-    writePKCS12Certificate(path + "/" + user.getUserId(), pwdCallBack.getPassword());
+    writePKCS12Certificate(new File(directory, user.getUserId()), pwdCallBack.getPassword());
   }
 
   /**
@@ -149,7 +141,7 @@ public class CertificateManager {
    * @throws GeneralSecurityException
    * @throws IOException
    */
-  public void load(String path, PasswordCallback pwdCallBack)
+  public void load(File path, PasswordCallback pwdCallBack)
     throws GeneralSecurityException, IOException
   {
     KeyStoreManager		loader;
@@ -169,24 +161,20 @@ public class CertificateManager {
 
   /**
    * Writes a the generated certificates into a PKCS12 key store.
-   * @param filename the key store file name
+   * @param file the key store file
    * @param password the key password
    * @throws IOException
    */
-  public void writePKCS12Certificate(String filename, char[] password)
+  public void writePKCS12Certificate(File file, char[] password)
     throws GeneralSecurityException, IOException
   {
-    if (filename == null || "".equals(filename)) {
-      throw new IOException("The file name cannot be empty");
-    }
-
-    if (!filename.toLowerCase().endsWith(".p12")) {
-      filename += ".p12";
-    }
-
-    FileOutputStream fos = new FileOutputStream(filename);
-    writePKCS12Certificate(password, fos);
-    fos.close();
+      var outFile = file;
+      if (!file.getName().toLowerCase().endsWith(".p12")) {
+          outFile = new File(file.getParentFile(), file.getName() + ".p12");
+      }
+      try (FileOutputStream fos = new FileOutputStream(outFile)) {
+          writePKCS12Certificate(password, fos);
+      }
   }
 
   /**
@@ -222,8 +210,8 @@ public class CertificateManager {
   // DATA MEMBERS
   // --------------------------------------------------------------------
 
-  private X509Generator					generator;
-  private EbicsUser					user;
+  private final X509Generator					generator;
+  private final EbicsUser					user;
 
   private X509Certificate				a005Certificate;
   private X509Certificate				e002Certificate;

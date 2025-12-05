@@ -14,34 +14,31 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.xml;
 
 import java.util.Calendar;
 
-import javax.crypto.spec.SecretKeySpec;
-
 import org.kopi.ebics.exception.EbicsException;
-import org.kopi.ebics.schema.h003.DataEncryptionInfoType.EncryptionPubKeyDigest;
-import org.kopi.ebics.schema.h003.DataTransferRequestType;
-import org.kopi.ebics.schema.h003.DataTransferRequestType.DataEncryptionInfo;
-import org.kopi.ebics.schema.h003.DataTransferRequestType.SignatureData;
-import org.kopi.ebics.schema.h003.EbicsRequestDocument.EbicsRequest;
-import org.kopi.ebics.schema.h003.EbicsRequestDocument.EbicsRequest.Body;
-import org.kopi.ebics.schema.h003.EbicsRequestDocument.EbicsRequest.Header;
-import org.kopi.ebics.schema.h003.MutableHeaderType;
-import org.kopi.ebics.schema.h003.OrderAttributeType;
-import org.kopi.ebics.schema.h003.StandardOrderParamsType;
-import org.kopi.ebics.schema.h003.StaticHeaderOrderDetailsType;
-import org.kopi.ebics.schema.h003.StaticHeaderOrderDetailsType.OrderType;
-import org.kopi.ebics.schema.h003.StaticHeaderType;
-import org.kopi.ebics.schema.h003.StaticHeaderType.BankPubKeyDigests;
-import org.kopi.ebics.schema.h003.StaticHeaderType.BankPubKeyDigests.Authentication;
-import org.kopi.ebics.schema.h003.StaticHeaderType.BankPubKeyDigests.Encryption;
-import org.kopi.ebics.schema.h003.StaticHeaderType.Product;
+import org.kopi.ebics.schema.h005.DataEncryptionInfoType.EncryptionPubKeyDigest;
+import org.kopi.ebics.schema.h005.DataTransferRequestType;
+import org.kopi.ebics.schema.h005.DataTransferRequestType.DataEncryptionInfo;
+import org.kopi.ebics.schema.h005.DataTransferRequestType.SignatureData;
+import org.kopi.ebics.schema.h005.EbicsRequestDocument.EbicsRequest;
+import org.kopi.ebics.schema.h005.EbicsRequestDocument.EbicsRequest.Body;
+import org.kopi.ebics.schema.h005.EbicsRequestDocument.EbicsRequest.Header;
+import org.kopi.ebics.schema.h005.MutableHeaderType;
+import org.kopi.ebics.schema.h005.StandardOrderParamsDocument;
+import org.kopi.ebics.schema.h005.StandardOrderParamsType;
+import org.kopi.ebics.schema.h005.StaticHeaderOrderDetailsType;
+import org.kopi.ebics.schema.h005.StaticHeaderType;
+import org.kopi.ebics.schema.h005.StaticHeaderType.BankPubKeyDigests;
+import org.kopi.ebics.schema.h005.StaticHeaderType.BankPubKeyDigests.Authentication;
+import org.kopi.ebics.schema.h005.StaticHeaderType.BankPubKeyDigests.Encryption;
+import org.kopi.ebics.schema.h005.StaticHeaderType.Product;
 import org.kopi.ebics.session.EbicsSession;
+import org.kopi.ebics.session.OrderType;
 import org.kopi.ebics.utils.Utils;
 
 
@@ -49,7 +46,6 @@ import org.kopi.ebics.utils.Utils;
  * The <code>SPRRequestElement</code> is the request element
  * for revoking a subscriber
  *
- * @author Hachani
  *
  */
 public class SPRRequestElement extends InitializationRequestElement {
@@ -58,9 +54,8 @@ public class SPRRequestElement extends InitializationRequestElement {
    * Constructs a new SPR request element.
    * @param session the current ebic session.
    */
-  public SPRRequestElement(EbicsSession session) throws EbicsException {
-    super(session, org.kopi.ebics.session.OrderType.SPR, "SPRRequest.xml");
-    keySpec = new SecretKeySpec(nonce, "EAS");
+  public SPRRequestElement(EbicsSession session) {
+    super(session, OrderType.SPR, "SPRRequest.xml");
   }
 
   @Override
@@ -79,7 +74,6 @@ public class SPRRequestElement extends InitializationRequestElement {
     SignatureData 			signatureData;
     EncryptionPubKeyDigest 		encryptionPubKeyDigest;
     StaticHeaderOrderDetailsType 	orderDetails;
-    OrderType 				orderType;
     StandardOrderParamsType		standardOrderParamsType;
     UserSignature			userSignature;
 
@@ -99,12 +93,13 @@ public class SPRRequestElement extends InitializationRequestElement {
 	                                          "http://www.w3.org/2001/04/xmlenc#sha256",
 	                                          decodeHex(session.getUser().getPartner().getBank().getE002Digest()));
     bankPubKeyDigests = EbicsXmlFactory.createBankPubKeyDigests(authentication, encryption);
-    orderType = EbicsXmlFactory.createOrderType(type.toString());
     standardOrderParamsType = EbicsXmlFactory.createStandardOrderParamsType();
-    orderDetails = EbicsXmlFactory.createStaticHeaderOrderDetailsType(session.getUser().getPartner().nextOrderId(),
-	                                                              OrderAttributeType.UZHNN,
-	                                                              orderType,
-	                                                              standardOrderParamsType);
+      var type = StaticHeaderOrderDetailsType.AdminOrderType.Factory.newInstance();
+      type.setStringValue(this.getType());
+
+      orderDetails = EbicsXmlFactory.createStaticHeaderOrderDetailsType(session.getUser().getPartner().nextOrderId(), type,
+	                                                              standardOrderParamsType,
+          StandardOrderParamsDocument.type);
     xstatic = EbicsXmlFactory.createStaticHeaderType(session.getBankID(),
 	                                             nonce,
 	                                             0,
@@ -123,7 +118,7 @@ public class SPRRequestElement extends InitializationRequestElement {
     dataEncryptionInfo = EbicsXmlFactory.createDataEncryptionInfo(true,
 	                                                          encryptionPubKeyDigest,
 	                                                          generateTransactionKey());
-    dataTransfer = EbicsXmlFactory.createDataTransferRequestType(dataEncryptionInfo, signatureData);
+    dataTransfer = EbicsXmlFactory.createDataTransferRequestType(dataEncryptionInfo, signatureData, null);
     body = EbicsXmlFactory.createEbicsRequestBody(dataTransfer);
     request = EbicsXmlFactory.createEbicsRequest(session.getConfiguration().getRevision(),
 	                                         session.getConfiguration().getVersion(),
@@ -136,6 +131,5 @@ public class SPRRequestElement extends InitializationRequestElement {
   // DATA MEMBERS
   // --------------------------------------------------------------------
 
-  private SecretKeySpec			keySpec;
   private static final long 		serialVersionUID = -6742241777786111337L;
 }

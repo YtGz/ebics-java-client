@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.interfaces;
@@ -27,7 +26,6 @@ import java.io.ObjectOutputStream;
  * files or databases. The save process can be launched via the method
  * {@linkplain Savable#save(ObjectOutputStream)}
  *
- * @author hachani
  *
  */
 public interface Savable {
@@ -37,11 +35,11 @@ public interface Savable {
    * @param oos the given stream.
    * @throws IOException save process failed
    */
-  public void save(ObjectOutputStream oos) throws IOException;
+  void save(ObjectOutputStream oos) throws IOException;
 
   /**
    * Returns the save name of this savable object.
    * @return the save name
    */
-  public String getSaveName();
+  String getSaveName();
 }

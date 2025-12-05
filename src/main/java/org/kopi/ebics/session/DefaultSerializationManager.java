@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.session;
@@ -29,7 +28,6 @@ import java.io.ObjectOutputStream;
 import org.kopi.ebics.exception.EbicsException;
 import org.kopi.ebics.interfaces.Savable;
 import org.kopi.ebics.interfaces.SerializationManager;
-import org.kopi.ebics.io.IOUtils;
 
 
 /**
@@ -37,7 +35,6 @@ import org.kopi.ebics.io.IOUtils;
  * The serialization process aims to save object on the user disk
  * using a separated file for each object to serialize.
  *
- * @author hachani
  *
  */
 public class DefaultSerializationManager implements SerializationManager {
@@ -60,9 +57,7 @@ public class DefaultSerializationManager implements SerializationManager {
   @Override
   public void serialize(Savable object) throws EbicsException {
     try {
-      ObjectOutputStream	out;
-
-      out = new ObjectOutputStream(new FileOutputStream(IOUtils.createFile(serializationDir, object.getSaveName())));
+      var out = new ObjectOutputStream(new FileOutputStream(new File(serializationDir, object.getSaveName())));
       object.save(out);
     } catch (IOException e) {
       throw new EbicsException(e.getMessage());
@@ -72,18 +67,15 @@ public class DefaultSerializationManager implements SerializationManager {
   @Override
   public ObjectInputStream deserialize(String name) throws EbicsException {
     try {
-      ObjectInputStream		input;
-
-      input = new ObjectInputStream(new FileInputStream(IOUtils.createFile(serializationDir, name + ".cer")));
-      return input;
+      return new ObjectInputStream(new FileInputStream(new File(serializationDir, name + ".cer")));
     } catch (IOException e) {
       throw new EbicsException(e.getMessage());
     }
   }
 
   @Override
-  public void setSerializationDirectory(String serializationDir) {
-    this.serializationDir = new File(serializationDir);
+  public void setSerializationDirectory(File serializationDir) {
+    this.serializationDir = serializationDir;
   }
 
   // --------------------------------------------------------------------

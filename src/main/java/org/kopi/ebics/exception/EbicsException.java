@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.exception;
@@ -22,7 +21,6 @@ package org.kopi.ebics.exception;
 /**
  * Common exception for all EBICS errors.
  *
- * @author hachani
  *
  */
 public class EbicsException extends Exception {
@@ -30,7 +28,9 @@ public class EbicsException extends Exception {
   /**
    * A means to construct a server error.
    */
-  public EbicsException() {}
+  public EbicsException(Throwable cause) {
+    super(cause);
+  }
 
   /**
    * A means to construct a server error with an additional message.
@@ -39,11 +39,16 @@ public class EbicsException extends Exception {
   public EbicsException(String message) {
     super(message);
   }
+
+    public EbicsException(String message, Throwable cause) {
+        super(message, cause);
+    }
   /**
    * A means to construct a server error with no additional message.
    * @param returnCode the ebics return code.
    */
   public EbicsException(ReturnCode returnCode) {
+    super(returnCode.getText());
     this.returnCode = returnCode;
   }
 

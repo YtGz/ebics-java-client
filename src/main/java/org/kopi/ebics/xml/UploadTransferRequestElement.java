@@ -14,30 +14,28 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.xml;
 
 import org.kopi.ebics.exception.EbicsException;
 import org.kopi.ebics.interfaces.ContentFactory;
+import org.kopi.ebics.interfaces.EbicsOrderType;
 import org.kopi.ebics.io.IOUtils;
-import org.kopi.ebics.schema.h003.DataTransferRequestType;
-import org.kopi.ebics.schema.h003.DataTransferRequestType.OrderData;
-import org.kopi.ebics.schema.h003.EbicsRequestDocument.EbicsRequest;
-import org.kopi.ebics.schema.h003.EbicsRequestDocument.EbicsRequest.Body;
-import org.kopi.ebics.schema.h003.EbicsRequestDocument.EbicsRequest.Header;
-import org.kopi.ebics.schema.h003.MutableHeaderType;
-import org.kopi.ebics.schema.h003.MutableHeaderType.SegmentNumber;
-import org.kopi.ebics.schema.h003.StaticHeaderType;
+import org.kopi.ebics.schema.h005.DataTransferRequestType;
+import org.kopi.ebics.schema.h005.DataTransferRequestType.OrderData;
+import org.kopi.ebics.schema.h005.EbicsRequestDocument.EbicsRequest;
+import org.kopi.ebics.schema.h005.EbicsRequestDocument.EbicsRequest.Body;
+import org.kopi.ebics.schema.h005.EbicsRequestDocument.EbicsRequest.Header;
+import org.kopi.ebics.schema.h005.MutableHeaderType;
+import org.kopi.ebics.schema.h005.MutableHeaderType.SegmentNumber;
+import org.kopi.ebics.schema.h005.StaticHeaderType;
 import org.kopi.ebics.session.EbicsSession;
-import org.kopi.ebics.session.OrderType;
 
 /**
  * The <code>UTransferRequestElement</code> is the root element
  * for all ebics upload transfers.
  *
- * @author Hachani
  *
  */
 public class UploadTransferRequestElement extends TransferRequestElement {
@@ -52,7 +50,7 @@ public class UploadTransferRequestElement extends TransferRequestElement {
    * @param content the content factory
    */
   public UploadTransferRequestElement(EbicsSession session,
-                                 OrderType orderType,
+                                 EbicsOrderType orderType,
                                  int segmentNumber,
                                  boolean lastSegment,
                                  byte[] transactionId,
@@ -91,6 +89,6 @@ public class UploadTransferRequestElement extends TransferRequestElement {
   // DATA MEMBERS
   // --------------------------------------------------------------------
 
-  private ContentFactory		content;
+  private final ContentFactory		content;
   private static final long 		serialVersionUID = 8465397978597444978L;
 }

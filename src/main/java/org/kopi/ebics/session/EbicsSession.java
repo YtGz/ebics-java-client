@@ -14,12 +14,10 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.session;
 
-import java.io.IOException;
 import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +30,6 @@ import org.kopi.ebics.interfaces.EbicsUser;
 /**
  * Communication hub for EBICS.
  *
- * @author Hachani
  *
  */
 public class EbicsSession {
@@ -40,22 +37,20 @@ public class EbicsSession {
   /**
    * Constructs a new ebics session
    * @param user the ebics user
-   * @param the ebics client configuration
+   * @param configuration the ebics client configuration
    */
   public EbicsSession(EbicsUser user, Configuration configuration) {
     this.user = user;
     this.configuration = configuration;
-    parameters = new HashMap<String, String>();
+    parameters = new HashMap<>();
   }
 
   /**
    * Returns the banks encryption key.
    * The key will be fetched automatically form the bank if needed.
    * @return the banks encryption key.
-   * @throws IOException Communication error during key retrieval.
-   * @throws EbicsException Server error message generated during key retrieval.
    */
-  public RSAPublicKey getBankE002Key() throws IOException, EbicsException {
+  public RSAPublicKey getBankE002Key() {
     return user.getPartner().getBank().getE002Key();
   }
 
@@ -63,17 +58,14 @@ public class EbicsSession {
    * Returns the banks authentication key.
    * The key will be fetched automatically form the bank if needed.
    * @return the banks authentication key.
-   * @throws IOException Communication error during key retrieval.
-   * @throws EbicsException Server error message generated during key retrieval.
    */
-  public RSAPublicKey getBankX002Key() throws IOException, EbicsException {
+  public RSAPublicKey getBankX002Key() {
     return user.getPartner().getBank().getX002Key();
   }
 
   /**
    * Returns the bank id.
    * @return the bank id.
-   * @throws EbicsException
    */
   public String getBankID() throws EbicsException {
     return user.getPartner().getBank().getHostId();
@@ -136,8 +128,8 @@ public class EbicsSession {
   // DATA MEMBERS
   // --------------------------------------------------------------------
 
-  private EbicsUser				user;
-  private Configuration 			configuration;
+  private final EbicsUser				user;
+  private final Configuration 			configuration;
   private Product				product;
-  private Map<String, String>			parameters;
+  private final Map<String, String>			parameters;
 }

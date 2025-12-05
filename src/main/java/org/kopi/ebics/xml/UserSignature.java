@@ -14,20 +14,17 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.xml;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
 
-import org.apache.commons.codec.binary.Hex;
+import org.ebics.s002.OrderSignatureDataType;
+import org.ebics.s002.UserSignatureDataSigBookType;
 import org.kopi.ebics.exception.EbicsException;
 import org.kopi.ebics.interfaces.EbicsUser;
-import org.kopi.ebics.schema.s001.OrderSignatureDataType;
-import org.kopi.ebics.schema.s001.UserSignatureDataSigBookType;
 
 
 /**
@@ -35,7 +32,6 @@ import org.kopi.ebics.schema.s001.UserSignatureDataSigBookType;
  * element. The user data is signed with the user signature
  * key sent in the INI request to the EBICS bank server
  *
- * @author hachani
  *
  */
 public class UserSignature extends DefaultEbicsRootElement {
@@ -60,8 +56,8 @@ public class UserSignature extends DefaultEbicsRootElement {
 
   @Override
   public void build() throws EbicsException {
-    UserSignatureDataSigBookType 	userSignatureData;
-    OrderSignatureDataType		orderSignatureData;
+    UserSignatureDataSigBookType userSignatureData;
+    OrderSignatureDataType orderSignatureData;
     byte[]				signature;
 
     try {
@@ -76,7 +72,7 @@ public class UserSignature extends DefaultEbicsRootElement {
                                                                       user.getPartner().getPartnerId(),
                                                                       user.getUserId(),
                                                                       signature);
-    userSignatureData = EbicsXmlFactory.createUserSignatureDataSigBookType(new OrderSignatureDataType[] {orderSignatureData});
+    userSignatureData = EbicsXmlFactory.createUserSignatureDataSigBookType(new OrderSignatureDataType[]{orderSignatureData});
     document = EbicsXmlFactory.createUserSignatureDataDocument(userSignatureData);
   }
 
@@ -96,9 +92,9 @@ public class UserSignature extends DefaultEbicsRootElement {
   // DATA MEMBERS
   // --------------------------------------------------------------------
 
-  private EbicsUser 			user;
-  private String 			signatureVersion;
-  private byte[]			toSign;
-  private String			name;
+  private final EbicsUser 			user;
+  private final String 			signatureVersion;
+  private final byte[]			toSign;
+  private final String			name;
   private static final long 		serialVersionUID = 2992372604876703738L;
 }

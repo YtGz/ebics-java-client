@@ -14,19 +14,91 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.session;
 
+import org.kopi.ebics.interfaces.EbicsOrderType;
+
 /**
  * A BCS order type.
  *
- * @author Pierre Ducroquet
  *
  */
-public enum OrderType {
-	AZV, C2C, C52, C53, C54, CCC, CCT, CCU, CD1, CDB, CDC, CDD, DTE, EUE, FDL, FUL, HAA, HAC, HIA, HKD, HPB, HPD, HTD,
-	INI, PTK, SPR, STA, VMK, XCT, XE2, XKD, Z01, ZAA, ZAB, ZAD, ZAE, ZAG, ZAH, ZAI, ZAJ, ZAK, ZAL, ZAM, ZAN, ZAU, ZAV,
-	ZAW, ZAX, ZAY, ZB3, ZB6, ZDF, ZK1, ZK2, ZK3, ZM1, ZM2, ZM3, ZM4, ZM5, ZM6, ZM7, ZM8, ZM9, ZMA, ZMB, ZMC, ZMD, ZME
+public enum OrderType implements EbicsOrderType {
+    HIA,
+    HAA,
+    HKD,
+    HPB,
+    HPD,
+    HTD,
+    INI,
+    FUL,
+    FDL,
+    SPR,
+    AZV,
+    C2C,
+    CCC,
+    CCT,
+    CCU,
+    CD1,
+    CDB,
+    CDC,
+    CDD,
+    DTE,
+    EUE,
+    HAC,
+    PTK,
+    STA,
+    VMK,
+    ZDF,
+    ZB6,
+    Z01,
+    XKD,
+    XE2,
+    XCT,
+    C52,
+    C53,
+    C54,
+    ZAA,
+    ZAB,
+    ZAD,
+    ZAE,
+    ZAG,
+    ZAH,
+    ZAI,
+    ZAJ,
+    ZAK,
+    ZAL,
+    ZAM,
+    ZAN,
+    ZAU,
+    ZAV,
+    ZAW,
+    ZAX,
+    ZAY,
+    ZB3,
+    ZK1,
+    ZK2,
+    ZK3,
+    ZM1,
+    ZM2,
+    ZM3,
+    ZM4,
+    ZM5,
+    ZM6,
+    ZM7,
+    ZM8,
+    ZM9,
+    ZMA,
+    ZMB,
+    ZMC,
+    ZMD,
+    ZME;
+
+    @Override
+    public String getCode() {
+        return name();
+    }
+
 }

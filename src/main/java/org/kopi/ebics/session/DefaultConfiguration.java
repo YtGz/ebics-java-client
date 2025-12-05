@@ -14,22 +14,17 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.session;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
-import org.kopi.ebics.exception.EbicsException;
 import org.kopi.ebics.interfaces.Configuration;
-import org.kopi.ebics.interfaces.EbicsLogger;
 import org.kopi.ebics.interfaces.EbicsUser;
 import org.kopi.ebics.interfaces.LetterManager;
 import org.kopi.ebics.interfaces.SerializationManager;
@@ -41,7 +36,6 @@ import org.kopi.ebics.letter.DefaultLetterManager;
 /**
  * A simple client application configuration.
  *
- * @author hachani
  *
  */
 public class DefaultConfiguration implements Configuration {
@@ -50,21 +44,12 @@ public class DefaultConfiguration implements Configuration {
    * Creates a new application configuration.
    * @param rootDir the root directory
    */
-  public DefaultConfiguration(String rootDir) {
+  public DefaultConfiguration(File rootDir, Properties properties) {
     this.rootDir = rootDir;
     bundle = ResourceBundle.getBundle(RESOURCE_DIR);
-    properties = new Properties();
-    logger = new DefaultEbicsLogger();
+    this.properties = properties;
     serializationManager = new DefaultSerializationManager();
     traceManager = new DefaultTraceManager();
-  }
-
-  /**
-   * Creates a new application configuration.
-   * The root directory will be user.home/ebics/client
-   */
-  public DefaultConfiguration() {
-    this(System.getProperty("user.home") + File.separator + "ebics" + File.separator + "client");
   }
 
   /**
@@ -80,26 +65,8 @@ public class DefaultConfiguration implements Configuration {
     }
   }
 
-  /**
-   * Loads the configuration
-   * @throws EbicsException
-   */
-  public void load(File configFile) throws EbicsException {
-    if (isConfigFileLoad) {
-        throw new EbicsException("config already loaded");
-    }
-
-    try {
-      properties.load(new FileInputStream(configFile));
-    } catch (IOException e) {
-      throw new EbicsException(e.getMessage());
-    }
-
-    isConfigFileLoad = true;
-  }
-
   @Override
-  public String getRootDirectory() {
+  public File getRootDirectory() {
     return rootDir;
   }
 
@@ -107,8 +74,6 @@ public class DefaultConfiguration implements Configuration {
   public void init() {
     //Create the root directory
     IOUtils.createDirectories(getRootDirectory());
-    //Create the logs directory
-    IOUtils.createDirectories(getLogDirectory());
     //Create the serialization directory
     IOUtils.createDirectories(getSerializationDirectory());
     //create the SSL trusted stores directories
@@ -120,9 +85,6 @@ public class DefaultConfiguration implements Configuration {
     //Create users directory
     IOUtils.createDirectories(getUsersDirectory());
 
-    logger.setLogFile(getLogDirectory() + File.separator + getLogFileName());
-    ((DefaultEbicsLogger)logger).setFileLoggingEnabled(true);
-    ((DefaultEbicsLogger)logger).setLevel(DefaultEbicsLogger.ALL_LEVEL);
     serializationManager.setSerializationDirectory(getSerializationDirectory());
     traceManager.setTraceEnabled(isTraceEnabled());
     letterManager = new DefaultLetterManager(getLocale());
@@ -134,66 +96,52 @@ public class DefaultConfiguration implements Configuration {
   }
 
   @Override
-  public String getLogDirectory() {
-    return rootDir + File.separator + getString("log.dir.name");
-  }
-
-  @Override
-  public String getLogFileName() {
-    return getString("log.file.name");
-  }
-
-  @Override
-  public String getConfigurationFile() {
-    return rootDir + File.separator + getString("conf.file.name");
+  public File getConfigurationFile() {
+    return rootDir(getString("conf.file.name"));
   }
 
   @Override
   public String getProperty(String key) {
-    if (!isConfigFileLoad) {
-      return null;
-    }
-
-    if (key == null) {
-      return null;
-    }
-
     return properties.getProperty(key);
   }
 
   @Override
-  public String getKeystoreDirectory(EbicsUser user) {
-    return getUserDirectory(user) + File.separator + getString("keystore.dir.name");
+  public File getKeystoreDirectory(EbicsUser user) {
+      return new File(getUserDirectory(user), getString("keystore.dir.name"));
   }
 
   @Override
-  public String getTransferTraceDirectory(EbicsUser user) {
-    return getUserDirectory(user) + File.separator + getString("traces.dir.name");
+  public File getTransferTraceDirectory(EbicsUser user) {
+    return new File(getUserDirectory(user), getString("traces.dir.name"));
   }
 
   @Override
-  public String getSerializationDirectory() {
-    return rootDir + File.separator + getString("serialization.dir.name");
+  public File getSerializationDirectory() {
+    return rootDir(getString("serialization.dir.name"));
   }
 
   @Override
-  public String getSSLTrustedStoreDirectory() {
-    return rootDir + File.separator + getString("ssltruststore.dir.name");
+  public File getSSLTrustedStoreDirectory() {
+    return rootDir(getString("ssltruststore.dir.name"));
   }
 
   @Override
-  public String getSSLKeyStoreDirectory() {
-    return rootDir + File.separator + getString("sslkeystore.dir.name");
+  public File getSSLKeyStoreDirectory() {
+    return rootDir(getString("sslkeystore.dir.name"));
   }
 
   @Override
-  public String getSSLBankCertificates() {
-    return rootDir + File.separator + getString("sslbankcert.dir.name");
+  public File getSSLBankCertificates() {
+    return rootDir(getString("sslbankcert.dir.name"));
   }
 
   @Override
-  public String getUsersDirectory() {
-    return rootDir + File.separator + getString("users.dir.name");
+  public File getUsersDirectory() {
+    return rootDir(getString("users.dir.name"));
+  }
+
+  private File rootDir(String name) {
+    return new File(rootDir, name);
   }
 
   @Override
@@ -212,18 +160,13 @@ public class DefaultConfiguration implements Configuration {
   }
 
   @Override
-  public String getLettersDirectory(EbicsUser user) {
-    return getUserDirectory(user) + File.separator + getString("letters.dir.name");
+  public File getLettersDirectory(EbicsUser user) {
+    return new File(getUserDirectory(user), getString("letters.dir.name"));
   }
 
   @Override
-  public String getUserDirectory(EbicsUser user) {
-    return getUsersDirectory() + File.separator + user.getUserId();
-  }
-
-  @Override
-  public EbicsLogger getLogger() {
-    return logger;
+  public File getUserDirectory(EbicsUser user) {
+    return new File(getUsersDirectory(), user.getUserId());
   }
 
   @Override
@@ -265,14 +208,12 @@ public class DefaultConfiguration implements Configuration {
   // DATA MEMBERS
   // --------------------------------------------------------------------
 
-  private final String				rootDir;
-  private ResourceBundle			bundle;
-  private Properties				properties;
-  private EbicsLogger				logger;
-  private SerializationManager			serializationManager;
-  private TraceManager				traceManager;
-  private LetterManager				letterManager;
-  private boolean				isConfigFileLoad;
+  private final File rootDir;
+  private final ResourceBundle bundle;
+  private final Properties properties;
+  private final SerializationManager serializationManager;
+  private final TraceManager traceManager;
+  private LetterManager letterManager;
 
-  private static final String			RESOURCE_DIR = "org.kopi.ebics.client.config";
+  private static final String RESOURCE_DIR = "org.kopi.ebics.client.config";
 }

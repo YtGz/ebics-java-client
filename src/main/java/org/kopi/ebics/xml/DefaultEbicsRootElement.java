@@ -14,40 +14,34 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.xml;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.math.BigInteger;
-import java.security.SecureRandom;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.namespace.QName;
 
+import org.apache.xml.security.c14n.Canonicalizer;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
-import org.jdom.Document;
-import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
-import org.jdom.output.Format;
-import org.jdom.output.XMLOutputter;
 import org.kopi.ebics.exception.EbicsException;
+import org.kopi.ebics.interfaces.EbicsOrderType;
 import org.kopi.ebics.interfaces.EbicsRootElement;
 import org.kopi.ebics.session.EbicsSession;
-import org.kopi.ebics.session.OrderType;
-
+import org.kopi.ebics.utils.Utils;
 
 public abstract class DefaultEbicsRootElement implements EbicsRootElement {
 
@@ -55,15 +49,15 @@ public abstract class DefaultEbicsRootElement implements EbicsRootElement {
    * Constructs a new default <code>EbicsRootElement</code>
    * @param session the current ebics session
    */
-  public DefaultEbicsRootElement(EbicsSession session) {
+  protected DefaultEbicsRootElement(EbicsSession session) {
     this.session = session;
-    suggestedPrefixes = new HashMap<String, String>();
+    suggestedPrefixes = new HashMap<>();
   }
 
   /**
    *  Constructs a new default <code>EbicsRootElement</code>
    */
-  public DefaultEbicsRootElement() {
+  protected DefaultEbicsRootElement() {
     this(null);
   }
 
@@ -72,37 +66,28 @@ public abstract class DefaultEbicsRootElement implements EbicsRootElement {
    * @param uri the namespace URI
    * @param prefix the namespace URI prefix
    */
-  protected static void setSaveSuggestedPrefixes(String uri, String prefix) {
+  protected void setSaveSuggestedPrefixes(String uri, String prefix) {
     suggestedPrefixes.put(uri, prefix);
   }
 
   /**
-   * Prints a pretty XML document using jdom framework.
-   * @param input the XML input
-   * @return the pretty XML document.
-   * @throws EbicsException pretty print fails
+   * Prints a pretty XML document in Canonical XML.
+   * @return the canonical XML document.
    */
-  public byte[] prettyPrint() throws EbicsException {
-    Document                  	document;
-    XMLOutputter              	xmlOutputter;
-    SAXBuilder                	sxb;
-    ByteArrayOutputStream	output;
-
-    sxb = new SAXBuilder();
-    output = new ByteArrayOutputStream();
-    xmlOutputter = new XMLOutputter(Format.getPrettyFormat());
-
-    try {
-      document = sxb.build(new InputStreamReader(new ByteArrayInputStream(toByteArray()), "UTF-8"));
-      xmlOutputter.output(document, output);
-    } catch (JDOMException e) {
-      throw new EbicsException(e.getMessage());
-    } catch (IOException e) {
-      throw new EbicsException(e.getMessage());
-    }
-
-    return output.toByteArray();
+  public byte[] prettyPrint() {
+      try {
+          Canonicalizer canon = Canonicalizer.getInstance(Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS);
+          var bos = new ByteArrayOutputStream();
+          canon.canonicalize(toByteArray(), bos, true);
+          return bos.toByteArray();
+      } catch (Exception e) {
+          throw new RuntimeException("Failed to canonicalize XML", e);
+      }
   }
+
+    public String toPrettyString() {
+        return new String(prettyPrint(), StandardCharsets.UTF_8);
+    }
 
   /**
    * Inserts a schema location to the current ebics root element.
@@ -116,18 +101,19 @@ public abstract class DefaultEbicsRootElement implements EbicsRootElement {
                                    String prefix,
                                    String value)
   {
-    XmlCursor 			cursor;
 
-    cursor = document.newCursor();
-    while (cursor.hasNextToken()) {
-      if (cursor.isStart()) {
-	cursor.toNextToken();
-	cursor.insertAttributeWithValue(new QName(namespaceURI, localPart, prefix), value);
-	break;
-      } else {
-	cursor.toNextToken();
+      try (XmlCursor cursor = document.newCursor()) {
+          while (cursor.hasNextToken()) {
+              if (cursor.isStart()) {
+                  cursor.toNextToken();
+                  cursor.insertAttributeWithValue(new QName(namespaceURI, localPart, prefix),
+                      value);
+                  break;
+              } else {
+                  cursor.toNextToken();
+              }
+          }
       }
-    }
   }
 
   /**
@@ -135,17 +121,17 @@ public abstract class DefaultEbicsRootElement implements EbicsRootElement {
    * @param type the order type.
    * @return the generated file name.
    */
-  public static String generateName(OrderType type) {
-    return type.toString() + new BigInteger(130, new SecureRandom()).toString(32);
+  public static String generateName(EbicsOrderType type) {
+    return type.getCode() + new BigInteger(130, Utils.secureRandom).toString(32);
   }
   
   /**
    * Generates a random file name with a prefix.
-   * @param type the prefix to use.
+   * @param prefix the prefix to use.
    * @return the generated file name.
    */
   public static String generateName(String prefix) {
-    return prefix + new BigInteger(130, new SecureRandom()).toString(32);
+    return prefix + new BigInteger(130, Utils.secureRandom).toString(32);
   }
 
   @Override
@@ -165,57 +151,49 @@ public abstract class DefaultEbicsRootElement implements EbicsRootElement {
 
   @Override
   public void addNamespaceDecl(String prefix, String uri) {
-    XmlCursor 			cursor;
-
-    cursor = document.newCursor();
-    while (cursor.hasNextToken()) {
-      if (cursor.isStart()) {
-	cursor.toNextToken();
-	cursor.insertNamespace(prefix, uri);
-	break;
-      } else {
-	cursor.toNextToken();
+      try (XmlCursor cursor = document.newCursor()) {
+          while (cursor.hasNextToken()) {
+              if (cursor.isStart()) {
+                  cursor.toNextToken();
+                  cursor.insertNamespace(prefix, uri);
+                  break;
+              } else {
+                  cursor.toNextToken();
+              }
+          }
       }
-    }
   }
 
   @Override
   public void validate() throws EbicsException {
-    ArrayList<XmlError>		validationMessages;
-    boolean     		isValid;
-
-    validationMessages = new ArrayList<XmlError>();
-    isValid = document.validate(new XmlOptions().setErrorListener(validationMessages));
+    List<XmlError> validationMessages = new ArrayList<>();
+    boolean isValid = document.validate(new XmlOptions().setErrorListener(validationMessages));
 
     if (!isValid) {
-      String			message;
-      Iterator<XmlError>    	iter;
-
-      iter = validationMessages.iterator();
-      message = "";
+      Iterator<XmlError> iter = validationMessages.iterator();
+      StringBuilder message = new StringBuilder();
       while (iter.hasNext()) {
-	if (!message.equals("")) {
-	  message += ";";
-	}
-	message += iter.next().getMessage();
+        if (!message.toString().isEmpty()) {
+          message.append(";");
+        }
+        message.append(iter.next().getMessage());
       }
 
-      throw new EbicsException(message);
+        throw new EbicsException(
+            "Invalid " + this.getClass().getSimpleName() + ": " + message);
     }
   }
 
   @Override
   public void save(OutputStream out) throws EbicsException {
-    try {
-      byte[]		element;
-
-      element = prettyPrint();
-      out.write(element);
-      out.flush();
-      out.close();
-    } catch (IOException e) {
-      throw new EbicsException(e.getMessage());
-    }
+      try {
+          byte[] element = prettyPrint();
+          out.write(element);
+          out.flush();
+          out.close();
+      } catch (IOException e) {
+          throw new EbicsException(e.getMessage());
+      }
   }
 
   @Override
@@ -229,6 +207,6 @@ public abstract class DefaultEbicsRootElement implements EbicsRootElement {
 
   protected XmlObject			document;
   protected EbicsSession 		session;
-  private static Map<String, String> 	suggestedPrefixes;
+  private final Map<String, String> 	suggestedPrefixes;
   private static final long 		serialVersionUID = -3928957097145095177L;
 }

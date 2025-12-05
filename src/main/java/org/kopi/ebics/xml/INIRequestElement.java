@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.xml;
@@ -28,7 +27,6 @@ import org.kopi.ebics.utils.Utils;
  * The INI request XML element. This root element is to be sent
  * to the ebics server to initiate the signature certificate.
  *
- * @author hachani
  *
  */
 public class INIRequestElement extends DefaultEbicsRootElement {
@@ -48,23 +46,21 @@ public class INIRequestElement extends DefaultEbicsRootElement {
     return "INIRequest.xml";
   }
 
-  @Override
-  public void build() throws EbicsException {
-    SignaturePubKeyOrderDataElement		signaturePubKey;
+    @Override
+    public void build() throws EbicsException {
+        var signaturePubKey = new SignaturePubKeyOrderDataElement(session);
+        signaturePubKey.build();
+        unsecuredRequest = new UnsecuredRequestElement(session, OrderType.INI,
+            orderId == null ? session.getUser().getPartner().nextOrderId() : orderId,
+            Utils.zip(signaturePubKey.prettyPrint()));
+        unsecuredRequest.build();
+        unsecuredRequest.addNamespaceDecl("ds", "http://www.w3.org/2000/09/xmldsig#");
+        unsecuredRequest.setSaveSuggestedPrefixes("urn:org:ebics:H005", "");
 
-    signaturePubKey = new SignaturePubKeyOrderDataElement(session);
-    signaturePubKey.build();
-    unsecuredRequest = new UnsecuredRequestElement(session,
-	                                           OrderType.INI,
-	                                           orderId == null ? session.getUser().getPartner().nextOrderId() : orderId,
-	                                           Utils.zip(signaturePubKey.prettyPrint()));
-    unsecuredRequest.build();
-  }
+    }
 
   @Override
   public byte[] toByteArray() {
-    setSaveSuggestedPrefixes("http://www.ebics.org/H003", "");
-
     return unsecuredRequest.toByteArray();
   }
 
@@ -77,7 +73,7 @@ public class INIRequestElement extends DefaultEbicsRootElement {
   // DATA MEMBERS
   // --------------------------------------------------------------------
 
-  private String			orderId;
+  private final String			orderId;
   private UnsecuredRequestElement	unsecuredRequest;
   private static final long 		serialVersionUID = -1966559247739923555L;
 }

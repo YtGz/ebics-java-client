@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.utils;
@@ -23,7 +22,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.ParseException;
 import java.util.Date;
@@ -34,18 +32,17 @@ import java.util.zip.Inflater;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
 
 import org.apache.xml.security.c14n.Canonicalizer;
 import org.apache.xml.security.utils.IgnoreAllErrorHandler;
-import org.apache.xpath.XPathAPI;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.kopi.ebics.exception.EbicsException;
 import org.kopi.ebics.messages.Messages;
-import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.w3c.dom.traversal.NodeIterator;
+import org.w3c.dom.NodeList;
 
 
 /**
@@ -54,7 +51,16 @@ import org.w3c.dom.traversal.NodeIterator;
  * @author hachani
  *
  */
-public class Utils {
+public final class Utils {
+
+  static {
+    org.apache.xml.security.Init.init();
+  }
+
+  public static final SecureRandom secureRandom = new SecureRandom();
+
+  private Utils() {
+  }
 
   /**
    * Compresses an input of byte array
@@ -65,7 +71,7 @@ public class Utils {
    * 
    * @param toZip the input to be compressed
    * @return the compressed input data
-   * @throws IOException compression failed
+   * @throws EbicsException compression failed
    */
   public static byte[] zip(byte[] toZip) throws EbicsException {
 
@@ -112,23 +118,25 @@ public class Utils {
    * be at least 100 bits.
    * 
    * @return a random nonce.
-   * @throws EbicsException nonce generation fails.
    */
-  public static byte[] generateNonce() throws EbicsException {
-    SecureRandom 		secureRandom;
+  public static byte[] generateNonce() {
+    return nextRandomBytes(16);
+  }
 
-    try {
-      secureRandom = SecureRandom.getInstance("SHA1PRNG");
-      return secureRandom.generateSeed(16);
-    } catch (NoSuchAlgorithmException e) {
-      throw new EbicsException(e.getMessage());
-    }
+  public static byte[] generateKey() {
+    return nextRandomBytes(16);
+  }
+
+  private static byte[] nextRandomBytes(int n) {
+    byte[] data = new byte[n];
+    secureRandom.nextBytes(data);
+    return data;
   }
 
   /**
    * Uncompresses a given byte array input.
    * 
-   * <p>The Decompression is ensured via Universal compression 
+   * The Decompression is ensured via Universal compression
    * algorithm (RFC 1950, RFC 1951) As specified in the EBICS 
    * specification (16 Appendix: Standards and references)
    * 
@@ -136,35 +144,35 @@ public class Utils {
    * @return the uncompressed data.
    */
   public static byte[] unzip(byte[] zip) throws EbicsException {
-    Inflater 			decompressor;
-    ByteArrayOutputStream 	output;
-    byte[] 			buf;
+      Inflater decompressor;
+      ByteArrayOutputStream output;
+      byte[] buf;
 
-    decompressor = new Inflater();
-    output = new ByteArrayOutputStream(zip.length);
-    decompressor.setInput(zip);
-    buf = new byte[1024];
+      decompressor = new Inflater();
+      output = new ByteArrayOutputStream(zip.length);
+      decompressor.setInput(zip);
+      buf = new byte[1024];
 
-    while (!decompressor.finished()) {
-      int 		count;
+      while (!decompressor.finished()) {
+          int count;
+
+          try {
+              count = decompressor.inflate(buf);
+          } catch (DataFormatException e) {
+              throw new EbicsException(e.getMessage());
+          }
+          output.write(buf, 0, count);
+      }
 
       try {
-	count = decompressor.inflate(buf);
-      } catch (DataFormatException e) {
-	throw new EbicsException(e.getMessage());
+          output.close();
+      } catch (IOException e) {
+          throw new EbicsException(e.getMessage());
       }
-      output.write(buf, 0, count);
-    }
 
-    try {
-      output.close();
-    } catch (IOException e) {
-      throw new EbicsException(e.getMessage());
-    }
+      decompressor.end();
 
-    decompressor.end();
-
-    return output.toByteArray();
+      return output.toByteArray();
   }
 
   /**
@@ -179,41 +187,34 @@ public class Utils {
    * need to be signed.
    * 
    * <p>Thus, All the Elements with the attribute authenticate = true and their 
-   * sub elements are considered for the canonization process. This is performed 
-   * via the {@link XPathAPI#selectNodeIterator(Node, String) selectNodeIterator(Node, String)}.
+   * sub elements are considered for the canonization process.
    * 
    * @param input the byte array XML input.
    * @return the canonized form of the given XML
    * @throws EbicsException
    */
   public static byte[] canonize(byte[] input) throws EbicsException {
-    DocumentBuilderFactory 		factory;
-    DocumentBuilder			builder;
-    Document				document;
-    NodeIterator			iter;
-    ByteArrayOutputStream		output;
-    Node 				node;
+      try {
+          var factory = DocumentBuilderFactory.newInstance();
+          factory.setNamespaceAware(true);
+          factory.setValidating(true);
+          var builder = factory.newDocumentBuilder();
+          builder.setErrorHandler(new IgnoreAllErrorHandler());
+          var document = builder.parse(new ByteArrayInputStream(input));
 
-    try {
-      factory = DocumentBuilderFactory.newInstance();
-      factory.setNamespaceAware(true);
-      factory.setValidating(true);
-      builder = factory.newDocumentBuilder();
-      builder.setErrorHandler(new IgnoreAllErrorHandler());
-      document = builder.parse(new ByteArrayInputStream(input));
-      iter = XPathAPI.selectNodeIterator(document, "//*[@authenticate='true']");
-      output = new ByteArrayOutputStream();
-      while ((node = iter.nextNode()) != null) {
-        Canonicalizer 		canonicalizer;
-
-        canonicalizer = Canonicalizer.getInstance(Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS);
-        output.write(canonicalizer.canonicalizeSubtree(node));
+          var output = new ByteArrayOutputStream();
+          var nodeList = (NodeList) XPathFactory.newInstance().newXPath()
+              .evaluate("//*[@authenticate='true']", document, XPathConstants.NODESET);
+          for (int i = 0; i < nodeList.getLength(); i++) {
+              Node node = nodeList.item(i);
+              var canonicalizer = Canonicalizer.getInstance(
+                  Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS);
+              canonicalizer.canonicalizeSubtree(node, output);
+          }
+          return output.toByteArray();
+      } catch (Exception e) {
+          throw new EbicsException(e.getMessage());
       }
-
-      return output.toByteArray();
-    } catch (Exception e) {
-      throw new EbicsException(e.getMessage());
-    }
   }
 
   /**
@@ -271,7 +272,7 @@ public class Utils {
    * @param input the input to encrypt or decrypt.
    * @param keySpec the key spec.
    * @return the encrypted or decrypted data.
-   * @throws GeneralSecurityException
+   * @throws EbicsException
    */
   private static byte[] encryptOrDecrypt(int mode, byte[] input, SecretKeySpec keySpec)
     throws EbicsException
@@ -309,9 +310,8 @@ public class Utils {
    */
   public static void checkHttpCode(int httpCode) throws EbicsException {
     if (httpCode != 200) {
-      throw new EbicsException(Messages.getString("http.code.error",
-	                                          Constants.APPLICATION_BUNDLE_NAME,
-	                                          httpCode));
+      Messages messages = new Messages(Constants.APPLICATION_BUNDLE_NAME);
+      throw new EbicsException(messages.getString("http.code.error", httpCode));
     }
   }
 }

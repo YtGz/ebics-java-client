@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.letter;
@@ -23,8 +22,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.interfaces.RSAPublicKey;
@@ -44,8 +43,9 @@ public abstract class AbstractInitLetter implements InitLetter {
    * Constructs a new initialization letter.
    * @param locale the application locale
    */
-  public AbstractInitLetter(Locale locale) {
+  protected AbstractInitLetter(Locale locale) {
     this.locale = locale;
+    this.messages = new Messages(BUNDLE_NAME, locale);
   }
 
   @Override
@@ -85,19 +85,18 @@ public abstract class AbstractInitLetter implements InitLetter {
 	                userId,
 	                username,
 	                partnerId,
-	                version);
+	                version, messages);
     letter.build(certTitle, certificate, hashTitle, hash);
   }
 
   /**
    * Returns the value of the property key.
+   *
    * @param key the property key
-   * @param bundleName the bundle name
-   * @param locale the bundle locale
    * @return the property value
    */
-  protected String getString(String key, String bundleName, Locale locale) {
-    return Messages.getString(key, bundleName, locale);
+  protected String getString(String key) {
+    return messages.getString(key);
   }
 
   /**
@@ -107,9 +106,8 @@ public abstract class AbstractInitLetter implements InitLetter {
    * @throws GeneralSecurityException
    */
   protected byte[] getHash(byte[] certificate) throws GeneralSecurityException {
-    String			hash256;
-
-    hash256 = new String(Hex.encodeHex(MessageDigest.getInstance("SHA-256").digest(certificate), false));
+    String hash256 = new String(
+        Hex.encodeHex(MessageDigest.getInstance("SHA-256").digest(certificate), false));
     return format(hash256).getBytes();
   }
 
@@ -128,8 +126,9 @@ public abstract class AbstractInitLetter implements InitLetter {
         }
 
         try {
-          digest = MessageDigest.getInstance("SHA-256", "BC").digest(hash.getBytes("US-ASCII"));
-        } catch (GeneralSecurityException | UnsupportedEncodingException e) {
+          digest = MessageDigest.getInstance("SHA-256", "BC").digest(hash.getBytes(
+              StandardCharsets.US_ASCII));
+        } catch (GeneralSecurityException e) {
           throw new EbicsException(e.getMessage());
         }
 
@@ -148,18 +147,13 @@ public abstract class AbstractInitLetter implements InitLetter {
    * @return the formatted hash
    */
   private String format(String hash256) {
-    StringBuffer	buffer;
-    String		formatted;
-
-    buffer = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     for (int i = 0; i < hash256.length(); i += 2) {
-      buffer.append(hash256.charAt(i));
-      buffer.append(hash256.charAt(i + 1));
-      buffer.append(' ');
+      sb.append(hash256.charAt(i));
+      sb.append(hash256.charAt(i + 1));
+      sb.append(' ');
     }
-
-    formatted = buffer.substring(0, 48) + LINE_SEPARATOR + buffer.substring(48) + LINE_SEPARATOR;
-    return formatted;
+    return sb.substring(0, 48) + LINE_SEPARATOR + sb.substring(48) + LINE_SEPARATOR;
   }
 
   // --------------------------------------------------------------------
@@ -170,10 +164,11 @@ public abstract class AbstractInitLetter implements InitLetter {
    * The <code>Letter</code> object is the common template
    * for all initialization letter.
    *
-   * @author Hachani
    *
    */
-  private class Letter {
+  class Letter {
+
+    private final Messages messages;
 
     /**
      * Constructs new <code>Letter</code> template
@@ -190,7 +185,8 @@ public abstract class AbstractInitLetter implements InitLetter {
                   String userId,
                   String username,
                   String partnerId,
-                  String version)
+                  String version,
+                  Messages messages)
     {
       this.title = title;
       this.hostId = hostId;
@@ -199,6 +195,7 @@ public abstract class AbstractInitLetter implements InitLetter {
       this.username = username;
       this.partnerId = partnerId;
       this.version = version;
+      this.messages = messages;
     }
 
     /**
@@ -219,8 +216,9 @@ public abstract class AbstractInitLetter implements InitLetter {
       writer = new PrintWriter(out, true);
       buildTitle();
       buildHeader();
-      if (certificate != null)
-          buildCertificate(certTitle, certificate);
+      if (certificate != null) {
+        buildCertificate(certTitle, certificate);
+      }
       buildHash(hashTitle, hash);
       buildFooter();
       writer.close();
@@ -244,35 +242,35 @@ public abstract class AbstractInitLetter implements InitLetter {
      * @throws IOException
      */
     public void buildHeader() throws IOException {
-      emit(Messages.getString("Letter.date", BUNDLE_NAME, locale));
+      emit(messages.getString("Letter.date"));
       appendSpacer();
       emit(formatDate(new Date()));
       emit(LINE_SEPARATOR);
-      emit(Messages.getString("Letter.time", BUNDLE_NAME, locale));
+      emit(messages.getString("Letter.time"));
       appendSpacer();
       emit(formatTime(new Date()));
       emit(LINE_SEPARATOR);
-      emit(Messages.getString("Letter.hostId", BUNDLE_NAME, locale));
+      emit(messages.getString("Letter.hostId"));
       appendSpacer();
       emit(hostId);
       emit(LINE_SEPARATOR);
-      emit(Messages.getString("Letter.bank", BUNDLE_NAME, locale));
+      emit(messages.getString("Letter.bank"));
       appendSpacer();
       emit(bankName);
       emit(LINE_SEPARATOR);
-      emit(Messages.getString("Letter.userId", BUNDLE_NAME, locale));
+      emit(messages.getString("Letter.userId"));
       appendSpacer();
       emit(userId);
       emit(LINE_SEPARATOR);
-      emit(Messages.getString("Letter.username", BUNDLE_NAME, locale));
+      emit(messages.getString("Letter.username"));
       appendSpacer();
       emit(username);
       emit(LINE_SEPARATOR);
-      emit(Messages.getString("Letter.partnerId", BUNDLE_NAME, locale));
+      emit(messages.getString("Letter.partnerId"));
       appendSpacer();
       emit(partnerId);
       emit(LINE_SEPARATOR);
-      emit(Messages.getString("Letter.version", BUNDLE_NAME, locale));
+      emit(messages.getString("Letter.version"));
       appendSpacer();
       emit(version);
       emit(LINE_SEPARATOR);
@@ -326,9 +324,9 @@ public abstract class AbstractInitLetter implements InitLetter {
      * @throws IOException
      */
     public void buildFooter() throws IOException {
-      emit(Messages.getString("Letter.date", BUNDLE_NAME, locale));
+      emit(messages.getString("Letter.date"));
       emit("                                  ");
-      emit(Messages.getString("Letter.signature", BUNDLE_NAME, locale));
+      emit(messages.getString("Letter.signature"));
     }
 
     /**
@@ -354,9 +352,8 @@ public abstract class AbstractInitLetter implements InitLetter {
      * @return the formatted date
      */
     public String formatDate(Date date) {
-      SimpleDateFormat		formatter;
-
-      formatter = new SimpleDateFormat(Messages.getString("Letter.dateFormat", BUNDLE_NAME, locale), locale);
+      SimpleDateFormat formatter = new SimpleDateFormat(
+          messages.getString("Letter.dateFormat"), locale);
       return formatter.format(date);
     }
 
@@ -366,15 +363,14 @@ public abstract class AbstractInitLetter implements InitLetter {
      * @return the formatted time
      */
     public String formatTime(Date time) {
-      SimpleDateFormat		formatter;
-
-      formatter = new SimpleDateFormat(Messages.getString("Letter.timeFormat", BUNDLE_NAME, locale), locale);
+      SimpleDateFormat formatter = new SimpleDateFormat(
+          messages.getString("Letter.timeFormat"), locale);
       return formatter.format(time);
     }
 
     /**
      * Returns the letter content
-     * @return
+     * @return letter content as a <code>byte[]</code>
      */
     public byte[] getLetter() {
       return out.toByteArray();
@@ -401,6 +397,7 @@ public abstract class AbstractInitLetter implements InitLetter {
 
   private Letter				letter;
   protected Locale				locale;
+  protected final Messages messages;
 
   protected static final String			BUNDLE_NAME = "org.kopi.ebics.letter.messages";
   private static final String			LINE_SEPARATOR = System.getProperty("line.separator");

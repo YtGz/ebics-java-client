@@ -14,29 +14,27 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.xml;
 
 import org.kopi.ebics.exception.EbicsException;
-import org.kopi.ebics.schema.h003.EmptyMutableHeaderType;
-import org.kopi.ebics.schema.h003.OrderDetailsType;
-import org.kopi.ebics.schema.h003.ProductElementType;
-import org.kopi.ebics.schema.h003.UnsecuredRequestStaticHeaderType;
-import org.kopi.ebics.schema.h003.EbicsUnsecuredRequestDocument.EbicsUnsecuredRequest;
-import org.kopi.ebics.schema.h003.EbicsUnsecuredRequestDocument.EbicsUnsecuredRequest.Body;
-import org.kopi.ebics.schema.h003.EbicsUnsecuredRequestDocument.EbicsUnsecuredRequest.Header;
-import org.kopi.ebics.schema.h003.EbicsUnsecuredRequestDocument.EbicsUnsecuredRequest.Body.DataTransfer;
-import org.kopi.ebics.schema.h003.EbicsUnsecuredRequestDocument.EbicsUnsecuredRequest.Body.DataTransfer.OrderData;
+import org.kopi.ebics.interfaces.EbicsOrderType;
+import org.kopi.ebics.schema.h005.EmptyMutableHeaderType;
+import org.kopi.ebics.schema.h005.OrderDetailsType;
+import org.kopi.ebics.schema.h005.ProductElementType;
+import org.kopi.ebics.schema.h005.UnsecuredRequestStaticHeaderType;
+import org.kopi.ebics.schema.h005.EbicsUnsecuredRequestDocument.EbicsUnsecuredRequest;
+import org.kopi.ebics.schema.h005.EbicsUnsecuredRequestDocument.EbicsUnsecuredRequest.Body;
+import org.kopi.ebics.schema.h005.EbicsUnsecuredRequestDocument.EbicsUnsecuredRequest.Header;
+import org.kopi.ebics.schema.h005.EbicsUnsecuredRequestDocument.EbicsUnsecuredRequest.Body.DataTransfer;
+import org.kopi.ebics.schema.h005.EbicsUnsecuredRequestDocument.EbicsUnsecuredRequest.Body.DataTransfer.OrderData;
 import org.kopi.ebics.session.EbicsSession;
-import org.kopi.ebics.session.OrderType;
 
 /**
  * The <code>UnsecuredRequestElement</code> is the common element
  * used for key management requests.
  *
- * @author hachani
  *
  */
 public class UnsecuredRequestElement extends DefaultEbicsRootElement {
@@ -48,7 +46,7 @@ public class UnsecuredRequestElement extends DefaultEbicsRootElement {
    * @param orderId the order id, if null a random one is generated.
    */
   public UnsecuredRequestElement(EbicsSession session,
-                                 OrderType orderType,
+                                 EbicsOrderType orderType,
                                  String orderId,
                                  byte[] orderData)
   {
@@ -70,9 +68,7 @@ public class UnsecuredRequestElement extends DefaultEbicsRootElement {
     OrderData 					orderData;
     EbicsUnsecuredRequest			request;
 
-    orderDetails = EbicsXmlFactory.createOrderDetailsType("DZNNN",
-						          orderId == null ? session.getUser().getPartner().nextOrderId() : orderId,
-	                                                  orderType.toString());
+    orderDetails = EbicsXmlFactory.createOrderDetailsType(orderType.getCode());
 
     productType = EbicsXmlFactory.creatProductElementType(session.getProduct().getLanguage(),
 	                                                  session.getProduct().getName());
@@ -105,12 +101,14 @@ public class UnsecuredRequestElement extends DefaultEbicsRootElement {
     return "UnsecuredRequest.xml";
   }
 
+
+
   // --------------------------------------------------------------------
   // DATA MEMBERS
   // --------------------------------------------------------------------
 
-  private OrderType			orderType;
-  private String			orderId;
-  private byte[]			orderData;
+  private final EbicsOrderType orderType;
+  private final String			orderId;
+  private final byte[]			orderData;
   private static final long 		serialVersionUID = -3548730114599886711L;
 }

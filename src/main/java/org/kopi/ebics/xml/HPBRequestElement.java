@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.xml;
@@ -26,7 +25,6 @@ import org.kopi.ebics.session.EbicsSession;
  * The <code>HPBRequestElement</code> is the element to be sent when
  * a HPB request is needed to retrieve the bank public keys
  *
- * @author hachani
  *
  */
 public class HPBRequestElement extends DefaultEbicsRootElement {
@@ -46,15 +44,12 @@ public class HPBRequestElement extends DefaultEbicsRootElement {
 
   @Override
   public void build() throws EbicsException {
-    SignedInfo			signedInfo;
-    byte[]			signature;
-
     noPubKeyDigestsRequest = new NoPubKeyDigestsRequestElement(session);
     noPubKeyDigestsRequest.build();
-    signedInfo = new SignedInfo(session.getUser(), noPubKeyDigestsRequest.getDigest());
+    var signedInfo = new SignedInfo(session.getUser(), noPubKeyDigestsRequest.getDigest());
     signedInfo.build();
     noPubKeyDigestsRequest.setAuthSignature(signedInfo.getSignatureType());
-    signature = signedInfo.sign(noPubKeyDigestsRequest.toByteArray());
+    var signature = signedInfo.sign(noPubKeyDigestsRequest.toByteArray());
     noPubKeyDigestsRequest.setSignatureValue(signature);
   }
 

@@ -14,12 +14,12 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.client;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -32,7 +32,6 @@ import java.security.interfaces.RSAPublicKey;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
-import javax.xml.crypto.dsig.SignedInfo;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.kopi.ebics.certificate.CertificateManager;
@@ -42,6 +41,7 @@ import org.kopi.ebics.interfaces.EbicsUser;
 import org.kopi.ebics.interfaces.PasswordCallback;
 import org.kopi.ebics.interfaces.Savable;
 import org.kopi.ebics.utils.Utils;
+import org.kopi.ebics.xml.SignedInfo;
 import org.kopi.ebics.xml.UserSignature;
 
 /**
@@ -49,7 +49,6 @@ import org.kopi.ebics.xml.UserSignature;
  * This object is not serializable, but it should be persisted every time it needs to be saved.
  * Persistence is achieved via <code>save(ObjectOutputStream)</code> and the matching constructor.
  *
- * @author Hachani
  *
  */
 public class User implements EbicsUser, Savable {
@@ -64,7 +63,7 @@ public class User implements EbicsUser, Savable {
    * @param name the user name,
    * @param email the user email
    * @param country the user country
-   * @param organisation the user organization or company
+   * @param organization the user organization or company
    * @param passwordCallback a callback-handler that supplies us with the password.
    *                         This parameter can be null, in this case no password is used.
    * @throws IOException
@@ -131,7 +130,7 @@ public class User implements EbicsUser, Savable {
   public User(EbicsPartner partner,
               String userId,
               String name,
-              String keystorePath,
+              File keystorePath,
               PasswordCallback passwordCallback)
     throws GeneralSecurityException, IOException
   {
@@ -155,17 +154,15 @@ public class User implements EbicsUser, Savable {
   }
 
   /**
-   * Saves the user certificates in a given path
-   * @param path the certificates path
-   * @throws GeneralSecurityException
-   * @throws IOException
+   * Saves the user certificates in a given directory
+   *
    */
-  public void saveUserCertificates(String path) throws GeneralSecurityException, IOException {
+  public void saveUserCertificates(File directory) throws GeneralSecurityException, IOException {
     if (manager == null) {
       throw new GeneralSecurityException("Cannot save user certificates");
     }
 
-    manager.save(path, passwordCallback);
+    manager.save(directory, passwordCallback);
   }
 
   /**
@@ -174,7 +171,7 @@ public class User implements EbicsUser, Savable {
    * @throws GeneralSecurityException
    * @throws IOException
    */
-  private void loadCertificates(String keyStorePath)
+  private void loadCertificates(File keyStorePath)
     throws GeneralSecurityException, IOException
   {
     manager = new CertificateManager(this);
@@ -255,8 +252,6 @@ public class User implements EbicsUser, Savable {
    * <p> All white-space characters should be removed from entry buffer {@code buf}.
    *
    * @param buf the given byte buffer
-   * @param offset the offset
-   * @param length the length
    * @return The byte buffer portion corresponding to the given length and offset
    */
   public static byte[] removeOSSpecificChars(byte[] buf) {
@@ -285,29 +280,25 @@ public class User implements EbicsUser, Savable {
    * @param email the user email
    * @param country the user country
    * @param organization the user organization
-   * @return
+   * @return Distinguished Names
    */
   private String makeDN(String name,
                         String email,
                         String country,
                         String organization)
   {
-    StringBuffer		buffer;
-
-    buffer = new StringBuffer();
-
-    buffer.append("CN=" + name);
+    StringBuilder sb = new StringBuilder();
+    sb.append("CN=").append(name);
     if (country != null) {
-      buffer.append(", " + "C=" + country.toUpperCase());
+      sb.append(", " + "C=").append(country.toUpperCase());
     }
     if (organization != null) {
-      buffer.append(", " + "O=" + organization);
+      sb.append(", " + "O=").append(organization);
     }
     if (email != null) {
-      buffer.append(", " + "E=" + email);
+      sb.append(", " + "E=").append(email);
     }
-
-    return buffer.toString();
+    return sb.toString();
   }
 
   /**
@@ -519,7 +510,7 @@ public class User implements EbicsUser, Savable {
    * will be sent to the EBICS server.
    */
   @Override
-  public byte[] sign(byte[] digest) throws IOException, GeneralSecurityException {
+  public byte[] sign(byte[] digest) throws GeneralSecurityException {
     Signature signature = Signature.getInstance("SHA256WithRSA", BouncyCastleProvider.PROVIDER_NAME);
     signature.initSign(a005PrivateKey);
     signature.update(removeOSSpecificChars(digest));
@@ -576,8 +567,6 @@ public class User implements EbicsUser, Savable {
    * @param input The encrypted data
    * @param key The secret key.
    * @return The decrypted data sent from the EBICS bank.
-   * @throws GeneralSecurityException
-   * @throws IOException
    */
   private byte[] decryptData(byte[] input, byte[] key)
     throws EbicsException
@@ -589,13 +578,13 @@ public class User implements EbicsUser, Savable {
   // DATA MEMBERS
   // --------------------------------------------------------------------
 
-  private EbicsPartner				partner;
-  private String				userId;
-  private String				name;
-  private String				dn;
+  private final EbicsPartner				partner;
+  private final String				userId;
+  private final String				name;
+  private final String				dn;
   private boolean				isInitializedHIA;
   private boolean				isInitialized;
-  private PasswordCallback 			passwordCallback;
+  private final PasswordCallback 			passwordCallback;
   private transient boolean			needSave;
   private CertificateManager			manager;
 

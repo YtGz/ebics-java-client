@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.xml;
@@ -24,14 +23,16 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.kopi.ebics.exception.EbicsException;
-import org.kopi.ebics.schema.h003.EbicsRequestDocument;
+import org.kopi.ebics.interfaces.EbicsOrderType;
+
+import org.kopi.ebics.schema.h005.EbicsRequestDocument;
 import org.kopi.ebics.session.EbicsSession;
-import org.kopi.ebics.session.OrderType;
 import org.kopi.ebics.utils.Utils;
 
 
@@ -40,7 +41,6 @@ import org.kopi.ebics.utils.Utils;
  * ebics uploads and downloads requests. The response of this element is
  * then used either to upload or download files from the ebics server.
  *
- * @author Hachani
  *
  */
 public abstract class InitializationRequestElement extends DefaultEbicsRootElement {
@@ -50,29 +50,28 @@ public abstract class InitializationRequestElement extends DefaultEbicsRootEleme
    * @param session the current ebics session.
    * @param type the initialization type (UPLOAD, DOWNLOAD).
    * @param name the element name.
-   * @throws EbicsException
    */
-  public InitializationRequestElement(EbicsSession session,
-                                      OrderType type,
-                                      String name)
-    throws EbicsException
-  {
+  protected InitializationRequestElement(EbicsSession session,
+                                      EbicsOrderType type,
+                                      String name) {
     super(session);
     this.type = type;
     this.name = name;
     nonce = Utils.generateNonce();
+    key = Utils.generateKey();
+    keySpec = new SecretKeySpec(key, "EAS");
   }
 
-  @Override
-  public void build() throws EbicsException {
-    SignedInfo			signedInfo;
-
-    buildInitialization();
-    signedInfo = new SignedInfo(session.getUser(), getDigest());
-    signedInfo.build();
-    ((EbicsRequestDocument)document).getEbicsRequest().setAuthSignature(signedInfo.getSignatureType());
-    ((EbicsRequestDocument)document).getEbicsRequest().getAuthSignature().setSignatureValue(EbicsXmlFactory.createSignatureValueType(signedInfo.sign(toByteArray())));
-  }
+    @Override
+    public void build() throws EbicsException {
+        buildInitialization();
+        SignedInfo signedInfo = new SignedInfo(session.getUser(), getDigest());
+        signedInfo.build();
+        var ebicsRequest = ((EbicsRequestDocument) document).getEbicsRequest();
+        ebicsRequest.setAuthSignature(signedInfo.getSignatureType());
+        ebicsRequest.getAuthSignature().setSignatureValue(
+            EbicsXmlFactory.createSignatureValueType(signedInfo.sign(toByteArray())));
+    }
 
   @Override
   public String getName() {
@@ -96,9 +95,7 @@ public abstract class InitializationRequestElement extends DefaultEbicsRootEleme
 
     try {
       return MessageDigest.getInstance("SHA-256", "BC").digest(Utils.canonize(toByteArray()));
-    } catch (NoSuchAlgorithmException e) {
-      throw new EbicsException(e.getMessage());
-    } catch (NoSuchProviderException e) {
+    } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
       throw new EbicsException(e.getMessage());
     }
   }
@@ -108,7 +105,7 @@ public abstract class InitializationRequestElement extends DefaultEbicsRootEleme
    * @return the element type.
    */
   public String getType() {
-    return type.toString();
+    return type.getCode();
   }
 
   /**
@@ -123,7 +120,7 @@ public abstract class InitializationRequestElement extends DefaultEbicsRootEleme
     }
 
     try {
-      return Hex.decodeHex((new String(hex)).toCharArray());
+      return Hex.decodeHex(new String(hex).toCharArray());
     } catch (DecoderException e) {
       throw new EbicsException(e.getMessage());
     }
@@ -135,12 +132,10 @@ public abstract class InitializationRequestElement extends DefaultEbicsRootEleme
    */
   protected byte[] generateTransactionKey() throws EbicsException {
     try {
-      Cipher			cipher;
-
-      cipher = Cipher.getInstance("RSA/NONE/PKCS1Padding", BouncyCastleProvider.PROVIDER_NAME);
+      Cipher cipher = Cipher.getInstance("RSA/NONE/PKCS1Padding", BouncyCastleProvider.PROVIDER_NAME);
       cipher.init(Cipher.ENCRYPT_MODE, session.getBankE002Key());
 
-      return cipher.doFinal(nonce);
+      return cipher.doFinal(key);
     } catch (Exception e) {
       throw new EbicsException(e.getMessage());
     }
@@ -157,8 +152,10 @@ public abstract class InitializationRequestElement extends DefaultEbicsRootEleme
   // DATA MEMBERS
   // --------------------------------------------------------------------
 
-  private String			name;
-  protected OrderType			type;
-  protected byte[]			nonce;
-  private static final long 		serialVersionUID = 8983807819242699280L;
+  private final String name;
+  protected EbicsOrderType type;
+  protected final byte[] nonce;
+  private final byte[] key;
+  protected final SecretKeySpec keySpec;
+  private static final long serialVersionUID = 8983807819242699280L;
 }

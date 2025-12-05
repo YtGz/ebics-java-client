@@ -14,22 +14,20 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.xml;
 
 import org.kopi.ebics.exception.EbicsException;
 import org.kopi.ebics.interfaces.ContentFactory;
-import org.kopi.ebics.schema.h003.HPBResponseOrderDataDocument;
-import org.kopi.ebics.schema.h003.HPBResponseOrderDataType;
+import org.kopi.ebics.schema.h005.HPBResponseOrderDataDocument;
+import org.kopi.ebics.schema.h005.HPBResponseOrderDataType;
 
 /**
  * The <code>HPBResponseOrderDataElement</code> contains the public bank
  * keys in encrypted mode. The user should decrypt with his encryption
  * key to have the bank public keys.
  *
- * @author hachani
  *
  */
 public class HPBResponseOrderDataElement extends DefaultResponseElement {
@@ -59,25 +57,9 @@ public class HPBResponseOrderDataElement extends DefaultResponseElement {
     return response.getEncryptionPubKeyInfo().getX509Data().getX509CertificateArray(0);
   }
 
-  public byte[] getBankE002PublicKeyModulus() {
-      return response.getEncryptionPubKeyInfo().getPubKeyValue().getRSAKeyValue().getModulus();
-  }
-
-  public byte[] getBankE002PublicKeyExponent() {
-      return response.getEncryptionPubKeyInfo().getPubKeyValue().getRSAKeyValue().getExponent();
-  }
-
-  public byte[] getBankX002PublicKeyModulus() {
-      return response.getAuthenticationPubKeyInfo().getPubKeyValue().getRSAKeyValue().getModulus();
-  }
-
-  public byte[] getBankX002PublicKeyExponent() {
-      return response.getAuthenticationPubKeyInfo().getPubKeyValue().getRSAKeyValue().getExponent();
-  }
-
   @Override
   public void build() throws EbicsException {
-    parse(factory);
+    parse(factory, HPBResponseOrderDataDocument.Factory);
     response = ((HPBResponseOrderDataDocument)document).getHPBResponseOrderData();
   }
 

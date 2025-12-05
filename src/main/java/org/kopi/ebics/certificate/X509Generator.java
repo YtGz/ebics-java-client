@@ -14,28 +14,21 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.certificate;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
@@ -46,15 +39,15 @@ import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
+import org.kopi.ebics.certificate.X509Constants.CertificateKeyUsage;
+import org.kopi.ebics.utils.Utils;
 
 /**
  * An X509 certificate generator for EBICS protocol.
  * Generated certificates are self signed certificates.
  *
- * @author hachani
  *
  */
 @SuppressWarnings("deprecation")
@@ -80,7 +73,7 @@ public class X509Generator {
 	            issuer,
 	            notBefore,
 	            notAfter,
-	            X509Constants.SIGNATURE_KEY_USAGE);
+                CertificateKeyUsage.SIGNATURE_KEY_USAGE);
   }
 
   /**
@@ -103,7 +96,7 @@ public class X509Generator {
                     issuer,
                     notBefore,
                     notAfter,
-                    X509Constants.AUTHENTICATION_KEY_USAGE);
+                    CertificateKeyUsage.AUTHENTICATION_KEY_USAGE);
   }
 
   /**
@@ -126,7 +119,7 @@ public class X509Generator {
                     issuer,
                     notBefore,
                     notAfter,
-                    X509Constants.ENCRYPTION_KEY_USAGE);
+                    CertificateKeyUsage.ENCRYPTION_KEY_USAGE);
   }
 
   /**
@@ -145,15 +138,15 @@ public class X509Generator {
                                   String issuer,
       				  Date notBefore,
       				  Date notAfter,
-      				  int keyusage)
+      CertificateKeyUsage keyusage)
     throws GeneralSecurityException, IOException
   {
     X509V3CertificateGenerator		generator;
     BigInteger				serial;
     X509Certificate			certificate;
-    ASN1EncodableVector			vector;
 
     serial = BigInteger.valueOf(generateSerial());
+
     generator = new X509V3CertificateGenerator();
     generator.setSerialNumber(serial);
     generator.setIssuerDN(new X509Principal(issuer));
@@ -174,19 +167,19 @@ public class X509Generator {
 	                                             getPublic(),
 	                                             issuer,
 	                                             serial));
-    vector = new ASN1EncodableVector();
-    vector.add(KeyPurposeId.id_kp_emailProtection);
 
-    generator.addExtension(X509Extensions.ExtendedKeyUsage, false, new ExtendedKeyUsage(new DERSequence(vector)));
+    var purposeIds = new KeyPurposeId[] { KeyPurposeId.id_kp_emailProtection };
+
+      generator.addExtension(X509Extensions.ExtendedKeyUsage, false, new ExtendedKeyUsage(purposeIds));
 
     switch (keyusage) {
-    case X509Constants.SIGNATURE_KEY_USAGE:
+    case SIGNATURE_KEY_USAGE:
       generator.addExtension(X509Extensions.KeyUsage, false, new KeyUsage(KeyUsage.nonRepudiation));
       break;
-    case X509Constants.AUTHENTICATION_KEY_USAGE:
+    case AUTHENTICATION_KEY_USAGE:
       generator.addExtension(X509Extensions.KeyUsage, false, new KeyUsage(KeyUsage.digitalSignature));
       break;
-    case X509Constants.ENCRYPTION_KEY_USAGE:
+    case ENCRYPTION_KEY_USAGE:
       generator.addExtension(X509Extensions.KeyUsage, false, new KeyUsage(KeyUsage.keyAgreement));
       break;
     default:
@@ -194,7 +187,7 @@ public class X509Generator {
       break;
     }
 
-    certificate = generator.generate(keypair.getPrivate(), "BC", new SecureRandom());
+    certificate = generator.generate(keypair.getPrivate(), "BC", Utils.secureRandom);
     certificate.checkValidity(new Date());
     certificate.verify(keypair.getPublic());
 
@@ -208,23 +201,14 @@ public class X509Generator {
    * @param issuer the certificate issuer
    * @param serial the certificate serial number
    * @return the authority key identifier of the public key
-   * @throws IOException
    */
   private AuthorityKeyIdentifier getAuthorityKeyIdentifier(PublicKey publicKey,
                                                            String issuer,
-                                                           BigInteger serial)
-    throws IOException
-  {
-    InputStream			input;
-    SubjectPublicKeyInfo	keyInfo;
-    ASN1EncodableVector 	vector;
-
-    input = new ByteArrayInputStream(publicKey.getEncoded());
-    keyInfo = new SubjectPublicKeyInfo((ASN1Sequence)new ASN1InputStream(input).readObject());
-    vector = new ASN1EncodableVector();
-    vector.add(new GeneralName(new X509Name(issuer)));
-
-    return new AuthorityKeyIdentifier(keyInfo, new GeneralNames(new DERSequence(vector)), serial);
+                                                           BigInteger serial) {
+      SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
+      X500Name issuerName = new X500Name(issuer);
+      GeneralNames generalNames = new GeneralNames(new GeneralName(issuerName));
+      return new AuthorityKeyIdentifier(keyInfo, generalNames, serial);
   }
 
   /**
@@ -237,34 +221,26 @@ public class X509Generator {
   private SubjectKeyIdentifier getSubjectKeyIdentifier(PublicKey publicKey)
     throws IOException
   {
-    InputStream			input;
-    SubjectPublicKeyInfo	keyInfo;
-
-    input = new ByteArrayInputStream(publicKey.getEncoded());
-    keyInfo = new SubjectPublicKeyInfo((ASN1Sequence)new ASN1InputStream(input).readObject());
-
-    return new SubjectKeyIdentifier(keyInfo);
+      SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
+      return new SubjectKeyIdentifier(keyInfo.getEncoded());
   }
 
   /**
-   * Generates a random serial number
+   * Generates a serial number from current timestamp
    *
    * @return the serial number
    */
   private long generateSerial() {
-    Date		now;
-
-    now = new Date();
-    String sNow = sdfSerial.format(now);
-
-    return Long.valueOf(sNow).longValue();
+      Date now = new Date();
+      String sNow = sdfSerial.format(now);
+      return Long.parseLong(sNow);
   }
 
   // --------------------------------------------------------------------
   // DATA MEMBERS
   // --------------------------------------------------------------------
 
-  private static SimpleDateFormat 			sdfSerial;
+  private static final SimpleDateFormat 			sdfSerial;
 
   static {
     sdfSerial = new SimpleDateFormat("yyyyMMddHHmmssSSS");

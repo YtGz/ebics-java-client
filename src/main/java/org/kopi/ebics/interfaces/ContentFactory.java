@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.interfaces;
@@ -29,9 +28,9 @@ public interface ContentFactory extends Serializable {
    * Returns a new data source of the data to be sent.
    * The instance must ensure that the returned stream will
    * deliver the identical data during the lifetime of this instance.
-   * Nevertheless how often the method will be called.
+   * Nevertheless, how often the method will be called.
    * @return a new data source of the data to be sent.
    * @throws IOException
    */
-  public InputStream getContent() throws IOException;
+  InputStream getContent() throws IOException;
 }

@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.interfaces;
@@ -31,19 +30,19 @@ public interface EbicsElement extends Serializable {
    * Returns the name of this <code>EbicsElement</code>
    * @return the name of the element
    */
-  public String getName();
+  String getName();
 
   /**
    * Builds the <code>EbicsElement</code> XML fragment
    * @throws EbicsException
    */
-  public void build() throws EbicsException;
+  void build() throws EbicsException;
 
   /**
    * Prints the <code>EbicsElement</code> into
    * the given stream.
    * @param stream the print stream
    */
-  public void print(PrintStream stream);
+  void print(PrintStream stream);
 
 }

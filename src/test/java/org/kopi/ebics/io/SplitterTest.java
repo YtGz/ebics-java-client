@@ -1,7 +1,7 @@
 package org.kopi.ebics.io;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.Test;
-import org.kopi.ebics.client.EbicsClient;
 import org.kopi.ebics.exception.EbicsException;
 import org.kopi.ebics.session.EbicsSession;
 import org.kopi.ebics.session.OrderType;
@@ -57,8 +57,6 @@ class SplitterTest {
     }
 
     private UploadTransferRequestElement prepareActualRequest(Splitter splitter) throws EbicsException {
-        // Not used but apparently needed. I don't even wanna know
-        Mockito.mock(EbicsClient.class, Mockito.RETURNS_DEEP_STUBS);
         EbicsSession ebicsSession = Mockito.mock(EbicsSession.class, Mockito.RETURNS_DEEP_STUBS);
 
         UploadTransferRequestElement uploader = new UploadTransferRequestElement(ebicsSession,
@@ -92,7 +90,7 @@ class SplitterTest {
     }
 
     private SecretKey secretKey() throws NoSuchAlgorithmException, InvalidKeySpecException {
-        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+        Security.addProvider(new BouncyCastleProvider());
 
         final String password = "test";
         int pswdIterations = 65536;

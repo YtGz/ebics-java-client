@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.xml;
@@ -24,13 +23,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
 import org.kopi.ebics.exception.EbicsException;
-import org.kopi.ebics.schema.h003.EbicsRequestDocument;
-import org.kopi.ebics.schema.h003.MutableHeaderType;
-import org.kopi.ebics.schema.h003.StaticHeaderType;
-import org.kopi.ebics.schema.h003.EbicsRequestDocument.EbicsRequest;
-import org.kopi.ebics.schema.h003.EbicsRequestDocument.EbicsRequest.Body;
-import org.kopi.ebics.schema.h003.EbicsRequestDocument.EbicsRequest.Header;
-import org.kopi.ebics.schema.h003.EbicsRequestDocument.EbicsRequest.Body.TransferReceipt;
+import org.kopi.ebics.schema.h005.EbicsRequestDocument;
+import org.kopi.ebics.schema.h005.MutableHeaderType;
+import org.kopi.ebics.schema.h005.StaticHeaderType;
+import org.kopi.ebics.schema.h005.EbicsRequestDocument.EbicsRequest;
+import org.kopi.ebics.schema.h005.EbicsRequestDocument.EbicsRequest.Body;
+import org.kopi.ebics.schema.h005.EbicsRequestDocument.EbicsRequest.Header;
+import org.kopi.ebics.schema.h005.EbicsRequestDocument.EbicsRequest.Body.TransferReceipt;
 import org.kopi.ebics.session.EbicsSession;
 import org.kopi.ebics.utils.Utils;
 
@@ -39,7 +38,6 @@ import org.kopi.ebics.utils.Utils;
  * The <code>ReceiptRequestElement</code> is the element containing the
  * receipt request to tell the server bank that all segments are received.
  *
- * @author Hachani
  *
  */
 public class ReceiptRequestElement extends DefaultEbicsRootElement {
@@ -117,7 +115,7 @@ public class ReceiptRequestElement extends DefaultEbicsRootElement {
   // DATA MEMBERS
   // --------------------------------------------------------------------
 
-  private byte[] 			transactionId;
-  private String			name;
+  private final byte[] 			transactionId;
+  private final String			name;
   private static final long 		serialVersionUID = -1969616441705744725L;
 }

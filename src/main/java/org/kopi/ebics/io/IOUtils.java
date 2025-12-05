@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.io;
@@ -33,83 +32,17 @@ import org.kopi.ebics.interfaces.ContentFactory;
  * Some IO utilities for EBICS files management.
  * EBICS server
  *
- * @author hachani
  *
  */
-public class IOUtils {
+public final class IOUtils {
 
   /**
-   * Creates a directory from a root one
-   * @param parent the parent directory
-   * @param child the directory name
-   * @return The created directory
-   */
-  public static File createDirectory(File parent, String child) {
-    File			directory;
-
-    directory = new File(parent, child);
-    directory.mkdir();
-
-    return directory;
-  }
-
-  /**
-   * Creates a directory from a root one
-   * @param parent the parent directory
-   * @param child the directory name
-   * @return The created directory
-   */
-  public static File createDirectory(String parent, String child) {
-    File			directory;
-
-    directory = new File(parent, child);
-    directory.mkdir();
-
-    return directory;
-  }
-
-  /**
-   * Creates a directory from a directory name
-   * @param name the absolute directory name
-   * @return The created directory
-   */
-  public static File createDirectory(String name) {
-    File			directory;
-
-    directory = new File(name);
-    directory.mkdir();
-
-    return directory;
-  }
-
-  /**
-   * Creates many directories from a given full path.
+   * Creates directories from a given full path.
    * Path should use default separator like '/' for UNIX
    * systems
-   * @param fullName the full absolute path of the directories
-   * @return The created directory
    */
-  public static File createDirectories(String fullName) {
-    File			directory;
-
-    directory = new File(fullName);
+  public static void createDirectories(File directory) {
     directory.mkdirs();
-
-    return directory;
-  }
-
-  /**
-   * Creates a new <code>java.io.File</code> from a given root.
-   * @param parent the parent of the file.
-   * @param name the file name.
-   * @return the created file.
-   */
-  public static File createFile(File parent, String name) {
-    File			file;
-
-    file = new File(parent, name);
-
-    return file;
   }
 
 
@@ -121,9 +54,9 @@ public class IOUtils {
    */
   public static byte[] getFileContent(File file) throws EbicsException {
     try {
-      try(FileInputStream input = new FileInputStream(file)) {
-          return inputStreamToBytes(input);
-      }
+        try (FileInputStream input = new FileInputStream(file)) {
+            return inputStreamToBytes(input);
+        }
     } catch (IOException e) {
       throw new EbicsException(e.getMessage());
     }
@@ -132,7 +65,7 @@ public class IOUtils {
   /**
    * Returns the content of a <code>ContentFactory</code> as a byte array
    * @param content
-   * @return
+   * @return content of a <code>ContentFactory</code> as a <code>byte[]</code>
    * @throws EbicsException
    */
     public static byte[] getFactoryContent(ContentFactory content) throws EbicsException {
@@ -153,4 +86,7 @@ public class IOUtils {
         out.close();
         return out.toByteArray();
     }
+
+  private IOUtils() {
+  }
 }

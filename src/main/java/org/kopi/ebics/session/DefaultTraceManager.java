@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.session;
@@ -28,7 +27,6 @@ import org.kopi.ebics.interfaces.Configuration;
 import org.kopi.ebics.interfaces.EbicsRootElement;
 import org.kopi.ebics.interfaces.TraceManager;
 import org.kopi.ebics.io.FileCache;
-import org.kopi.ebics.io.IOUtils;
 
 
 /**
@@ -39,7 +37,6 @@ import org.kopi.ebics.io.IOUtils;
  * not offer tracing support.
  * see {@link Configuration#isTraceEnabled() isTraceEnabled()}
  *
- * @author hachani
  *
  */
 public class DefaultTraceManager implements TraceManager {
@@ -72,11 +69,8 @@ public class DefaultTraceManager implements TraceManager {
   @Override
   public void trace(EbicsRootElement element) throws EbicsException {
     try {
-      FileOutputStream		out;
-      File			file;
-
-      file = IOUtils.createFile(traceDir, element.getName());
-      out = new FileOutputStream(file);
+      var file = new File(traceDir, element.getName());
+      var out = new FileOutputStream(file);
       element.save(out);
       cache.add(file);
     } catch (IOException e) {
@@ -95,8 +89,8 @@ public class DefaultTraceManager implements TraceManager {
   }
 
   @Override
-  public void setTraceDirectory(String traceDir) {
-    this.traceDir = new File(traceDir);
+  public void setTraceDirectory(File traceDir) {
+    this.traceDir = traceDir;
   }
 
   @Override
@@ -109,5 +103,5 @@ public class DefaultTraceManager implements TraceManager {
   // --------------------------------------------------------------------
 
   private File				traceDir;
-  private FileCache			cache;
+  private final FileCache			cache;
 }

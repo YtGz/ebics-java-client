@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.io;
@@ -32,7 +31,6 @@ import org.kopi.ebics.utils.Utils;
  * A simple mean to join downloaded segments from the
  * bank ebics server.
  *
- * @author Hachani
  *
  */
 public class Joiner {
@@ -70,9 +68,7 @@ public class Joiner {
       buffer.close();
       decrypted = user.decrypt(buffer.toByteArray(), transactionKey);
       output.write(Utils.unzip(decrypted));
-    } catch (GeneralSecurityException e) {
-      throw new EbicsException(e.getMessage());
-    } catch (IOException e) {
+    } catch (GeneralSecurityException | IOException e) {
       throw new EbicsException(e.getMessage());
     }
   }
@@ -81,6 +77,6 @@ public class Joiner {
   // DATA MEMBERS
   // --------------------------------------------------------------------
 
-  private EbicsUser			user;
-  private ByteArrayOutputStream		buffer;
+  private final EbicsUser			user;
+  private final ByteArrayOutputStream		buffer;
 }

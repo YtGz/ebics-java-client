@@ -14,16 +14,16 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.xml;
 
+import org.apache.xmlbeans.impl.schema.DocumentFactory;
 import org.kopi.ebics.exception.EbicsException;
 import org.kopi.ebics.exception.ReturnCode;
 import org.kopi.ebics.interfaces.ContentFactory;
-import org.kopi.ebics.schema.h003.EbicsKeyManagementResponseDocument;
-import org.kopi.ebics.schema.h003.EbicsKeyManagementResponseDocument.EbicsKeyManagementResponse;
+import org.kopi.ebics.schema.h005.EbicsKeyManagementResponseDocument;
+import org.kopi.ebics.schema.h005.EbicsKeyManagementResponseDocument.EbicsKeyManagementResponse;
 
 /**
  * The <code>KeyManagementResponseElement</code> is the common element
@@ -31,7 +31,6 @@ import org.kopi.ebics.schema.h003.EbicsKeyManagementResponseDocument.EbicsKeyMan
  * returned code from the ebics server and throw an exception if it is
  * not an EBICS_OK code.
  *
- * @author hachani
  *
  */
 public class KeyManagementResponseElement extends DefaultResponseElement {
@@ -58,25 +57,31 @@ public class KeyManagementResponseElement extends DefaultResponseElement {
    * Returns the order data of the response.
    * @return the order data.
    */
-  @SuppressWarnings("deprecation")
   public byte[] getOrderData() {
-    return response.getBody().getDataTransfer().getOrderData().byteArrayValue();
+    return response.getBody().getDataTransfer().getOrderData().getByteArrayValue();
   }
 
   @Override
   public void build() throws EbicsException {
-    String			code;
-    String			text;
-
-    parse(factory);
-    response = ((EbicsKeyManagementResponseDocument)document).getEbicsKeyManagementResponse();
-    code = response.getHeader().getMutable().getReturnCode();
-    text = response.getHeader().getMutable().getReportText();
+    var doc = parse(factory, EbicsKeyManagementResponseDocument.Factory);
+    response = doc.getEbicsKeyManagementResponse();
+    String code = response.getHeader().getMutable().getReturnCode();
+    String text = response.getHeader().getMutable().getReportText();
     returnCode = ReturnCode.toReturnCode(code, text);
     report();
   }
 
-  // --------------------------------------------------------------------
+    @Override
+    public void report() throws EbicsException {
+        super.report();
+        // there is a response code also in the body which needs to be checked
+        var bodyReturnCode = response.getBody().getReturnCode().getStringValue();
+        var code = ReturnCode.toReturnCode(bodyReturnCode, "Code " + bodyReturnCode);
+        checkReturnCode(code);
+    }
+
+
+    // --------------------------------------------------------------------
   // DATA MEMBERS
   // --------------------------------------------------------------------
 

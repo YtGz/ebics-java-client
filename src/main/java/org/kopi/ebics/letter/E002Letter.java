@@ -14,7 +14,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * $Id$
  */
 
 package org.kopi.ebics.letter;
@@ -32,7 +31,6 @@ import org.kopi.ebics.interfaces.EbicsUser;
  * The <code>E002Letter</code> is the initialization letter
  * for the encryption certificate.
  *
- * @author Hachani
  *
  */
 public class E002Letter extends AbstractInitLetter {
@@ -53,10 +51,10 @@ public class E002Letter extends AbstractInitLetter {
                     user.getUserId(),
                     user.getName(),
                     user.getPartner().getPartnerId(),
-                    getString("HIALetter.e002.version", BUNDLE_NAME, locale),
-                    getString("HIALetter.e002.certificate", BUNDLE_NAME, locale),
+                    getString("HIALetter.e002.version"),
+                    getString("HIALetter.e002.certificate"),
                     Base64.encodeBase64(user.getE002Certificate(), true),
-                    getString("HIALetter.e002.digest", BUNDLE_NAME, locale),
+                    getString("HIALetter.e002.digest"),
                     getHash(user.getE002Certificate()));
         } else {
             build(user.getPartner().getBank().getHostId(),
@@ -64,21 +62,21 @@ public class E002Letter extends AbstractInitLetter {
                     user.getUserId(),
                     user.getName(),
                     user.getPartner().getPartnerId(),
-                    getString("HIALetter.e002.version", BUNDLE_NAME, locale),
-                    getString("HIALetter.e002.certificate", BUNDLE_NAME, locale),
+                    getString("HIALetter.e002.version"),
+                    getString("HIALetter.e002.certificate"),
                     null,
-                    getString("HIALetter.e002.digest", BUNDLE_NAME, locale),
+                    getString("HIALetter.e002.digest"),
                     getHash(user.getE002PublicKey()));
         }
     }
 
   @Override
   public String getTitle() {
-    return getString("HIALetter.e002.title", BUNDLE_NAME, locale);
+    return getString("HIALetter.e002.title");
   }
 
   @Override
   public String getName() {
-    return getString("HIALetter.e002.name", BUNDLE_NAME, locale) + ".txt";
+    return getString("HIALetter.e002.name") + ".txt";
   }
 }
