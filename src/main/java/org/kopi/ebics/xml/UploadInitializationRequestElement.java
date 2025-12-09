@@ -132,7 +132,6 @@ public class UploadInitializationRequestElement extends InitializationRequestEle
 
         String digest;
         try {
-            // TODO: check if this is correct
             digest = Base64.encodeBase64String(MessageDigest.getInstance("SHA-256", "BC").digest(this.userData));
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             throw new EbicsException(e);

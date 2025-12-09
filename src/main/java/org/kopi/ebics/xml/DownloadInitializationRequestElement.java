@@ -83,8 +83,10 @@ public class DownloadInitializationRequestElement extends InitializationRequestE
       var type = StaticHeaderOrderDetailsType.AdminOrderType.Factory.newInstance();
       type.setStringValue(this.getType());
 
-      //FIXME Some banks cannot handle OrderID element in download process. Add parameter in configuration!!!
-      orderDetails = EbicsXmlFactory.createStaticHeaderOrderDetailsType(null,//session.getUser().getPartner().nextOrderId(),
+      String orderId = session.getConfiguration().isDownloadOrderIdEnabled()
+          ? session.getUser().getPartner().nextOrderId()
+          : null;
+      orderDetails = EbicsXmlFactory.createStaticHeaderOrderDetailsType(orderId,
             type,
 	                                                                standardOrderParamsType,
           StandardOrderParamsDocument.type);

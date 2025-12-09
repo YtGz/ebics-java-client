@@ -204,6 +204,12 @@ public class DefaultConfiguration implements Configuration {
     return getString("ebics.version");
   }
 
+  @Override
+  public boolean isDownloadOrderIdEnabled() {
+    String value = properties.getProperty("download.orderid.enabled");
+    return value != null && Boolean.parseBoolean(value.trim());
+  }
+
   // --------------------------------------------------------------------
   // DATA MEMBERS
   // --------------------------------------------------------------------

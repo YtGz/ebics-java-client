@@ -184,4 +184,11 @@ public interface Configuration {
    * @return the version of the EBICS protocol.
    */
   String getVersion();
+
+  /**
+   * Returns whether OrderID should be included in download requests.
+   * Some banks cannot handle the OrderID element in download requests.
+   * @return true if OrderID should be included, false otherwise
+   */
+  boolean isDownloadOrderIdEnabled();
 }
