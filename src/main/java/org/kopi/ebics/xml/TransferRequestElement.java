@@ -102,7 +102,7 @@ public abstract class TransferRequestElement extends DefaultEbicsRootElement {
 
   @Override
   public byte[] toByteArray() {
-    setSaveSuggestedPrefixes("http://www.ebics.org/H003", "");
+    setSaveSuggestedPrefixes("urn:org:ebics:H005", "");
 
     return super.toByteArray();
   }
