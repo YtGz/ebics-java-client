@@ -512,7 +512,7 @@ public class EbicsClient {
         String userEmail = properties.get("user.email");
         String userCountry = properties.get("user.country");
         String userOrg = properties.get("user.org");
-        boolean useCertificates = false;
+        boolean useCertificates = true;
         boolean saveCertificates = true;
         return createUser(new URL(bankUrl), bankName, hostId, partnerId, userId, userName, userEmail,
             userCountry, userOrg, useCertificates, saveCertificates, pwdHandler);
