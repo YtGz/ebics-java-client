@@ -29,8 +29,10 @@ import org.kopi.ebics.io.ByteArrayContentFactory;
 import org.kopi.ebics.io.Joiner;
 import org.kopi.ebics.messages.Messages;
 import org.kopi.ebics.session.EbicsSession;
+import org.kopi.ebics.session.OrderType;
 import org.kopi.ebics.utils.Constants;
 import org.kopi.ebics.utils.Utils;
+import org.kopi.ebics.xml.BTDDownloadInitializationRequestElement;
 import org.kopi.ebics.xml.DefaultEbicsRootElement;
 import org.kopi.ebics.xml.DownloadInitializationRequestElement;
 import org.kopi.ebics.xml.DownloadInitializationResponseElement;
@@ -261,6 +263,71 @@ public class FileTransfer {
     session.getConfiguration().getTraceManager().trace(response);
     response.report();
     joiner.append(response.getOrderData());
+  }
+
+  /**
+   * Fetches a file using BTD (Business Transaction Download) for EBICS 3.0 (H005).
+   * This method uses Service descriptors instead of legacy order types.
+   *
+   * @param downloadParams the BTD download parameters (service name, scope, etc.)
+   * @param outputFile where to put the downloaded data
+   * @throws IOException communication error
+   * @throws EbicsException server generated error
+   */
+  public void fetchFile(EbicsDownloadParams downloadParams, File outputFile)
+      throws IOException, EbicsException {
+    var sender = new HttpRequestSender(session);
+    var initializer = new BTDDownloadInitializationRequestElement(session, downloadParams);
+    initializer.build();
+    initializer.validate();
+
+    session.getConfiguration().getTraceManager().trace(initializer);
+    var request = initializer.prettyPrint();
+    var httpCode = sender.send(new ByteArrayContentFactory(request));
+    Utils.checkHttpCode(httpCode);
+
+    // Use FDL as the base order type for response parsing
+    var orderType = OrderType.FDL;
+    var response = new DownloadInitializationResponseElement(
+        sender.getResponseBody(),
+        orderType,
+        DefaultEbicsRootElement.generateName(orderType));
+
+    response.build();
+    session.getConfiguration().getTraceManager().trace(response);
+    response.report();
+
+    var state = new TransferState(response.getSegmentsNumber(), response.getTransactionId());
+    state.setSegmentNumber(response.getSegmentNumber());
+    var joiner = new Joiner(session.getUser());
+    joiner.append(response.getOrderData());
+
+    while (state.hasNext()) {
+      int segmentNumber = state.next();
+      fetchFile(orderType,
+          segmentNumber,
+          state.isLastSegment(),
+          state.getTransactionId(),
+          joiner);
+    }
+
+    try (FileOutputStream dest = new FileOutputStream(outputFile)) {
+      joiner.writeTo(dest, response.getTransactionKey());
+    }
+
+    var receipt = new ReceiptRequestElement(session,
+        state.getTransactionId(),
+        DefaultEbicsRootElement.generateName(orderType));
+    receipt.build();
+    receipt.validate();
+    session.getConfiguration().getTraceManager().trace(receipt);
+    httpCode = sender.send(new ByteArrayContentFactory(receipt.prettyPrint()));
+    Utils.checkHttpCode(httpCode);
+    var receiptResponse = new ReceiptResponseElement(sender.getResponseBody(),
+        DefaultEbicsRootElement.generateName(orderType));
+    receiptResponse.build();
+    session.getConfiguration().getTraceManager().trace(receiptResponse);
+    receiptResponse.report();
   }
 
   // --------------------------------------------------------------------

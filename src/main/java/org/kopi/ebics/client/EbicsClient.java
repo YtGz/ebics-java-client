@@ -446,6 +446,49 @@ public class EbicsClient {
     }
 
     /**
+     * Fetches a file using BTD (Business Transaction Download) for EBICS 3.0 (H005).
+     * This method uses Service descriptors instead of legacy order types.
+     *
+     * @param file the output file where the downloaded data will be written
+     * @param user the EBICS user
+     * @param product the application product
+     * @param downloadParams the BTD download parameters (service name, scope, etc.)
+     * @throws IOException communication error
+     * @throws EbicsException server generated error
+     */
+    public void fetchFile(File file, User user, Product product, EbicsDownloadParams downloadParams)
+        throws IOException, EbicsException {
+        EbicsSession session = createSession(user, product);
+        FileTransfer transferManager = new FileTransfer(session);
+
+        configuration.getTraceManager().setTraceDirectory(
+            configuration.getTransferTraceDirectory(user));
+
+        try {
+            transferManager.fetchFile(downloadParams, file);
+        } catch (NoDownloadDataAvailableException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("{} {}", messages.getString("download.file.error"), e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    /**
+     * Fetches a file using BTD (Business Transaction Download) for EBICS 3.0 (H005).
+     * Uses the default user and product.
+     *
+     * @param file the output file where the downloaded data will be written
+     * @param downloadParams the BTD download parameters (service name, scope, etc.)
+     * @throws IOException communication error
+     * @throws EbicsException server generated error
+     */
+    public void fetchFile(File file, EbicsDownloadParams downloadParams)
+        throws IOException, EbicsException {
+        fetchFile(file, defaultUser, defaultProduct, downloadParams);
+    }
+
+    /**
      * Performs buffers save before quitting the client application.
      */
     public void quit() {

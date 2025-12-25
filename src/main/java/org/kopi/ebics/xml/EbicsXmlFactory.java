@@ -33,8 +33,10 @@ import org.ebics.s002.SignaturePubKeyOrderDataType;
 import org.ebics.s002.UserSignatureDataDocument;
 import org.ebics.s002.UserSignatureDataSigBookType;
 import org.kopi.ebics.schema.h005.AuthenticationPubKeyInfoType;
+import org.kopi.ebics.schema.h005.BTDParamsType;
 import org.kopi.ebics.schema.h005.BTUOrderParamsDocument;
 import org.kopi.ebics.schema.h005.BTUParamsType;
+import org.kopi.ebics.schema.h005.ContainerStringType;
 import org.kopi.ebics.schema.h005.DataDigestType;
 import org.kopi.ebics.schema.h005.DataEncryptionInfoType.EncryptionPubKeyDigest;
 import org.kopi.ebics.schema.h005.DataTransferRequestType;
@@ -917,6 +919,40 @@ public final class EbicsXmlFactory {
             var flag = type.addNewSignatureFlag();
             flag.setRequestEDS(true);
         }
+        return type;
+    }
+
+    /**
+     * Creates BTD (Business Transaction Download) parameters for EBICS 3.0 (H005) downloads.
+     *
+     * @param serviceName  The service name (e.g., "STD", "MKT")
+     * @param scope        The service scope (e.g., "BIL" for Switzerland billing)
+     * @param option       The service option (e.g., "CH003ZMD"), may be null
+     * @param messageName  The message name (e.g., "smd", "tmd")
+     * @param containerType The container type (e.g., "ZIP"), may be null
+     * @return the BTDParamsType XML object
+     */
+    public static BTDParamsType createBTDParams(String serviceName, String scope, String option,
+        String messageName, String containerType) {
+        var type = BTDParamsType.Factory.newInstance();
+        var service = type.addNewService();
+        service.setServiceName(serviceName);
+        if (scope != null) {
+            service.setScope(scope);
+        }
+        if (option != null) {
+            service.setServiceOption(option);
+        }
+        if (containerType != null) {
+            var container = service.addNewContainer();
+            var containerEnum = ContainerStringType.Enum.forString(containerType);
+            if (containerEnum != null) {
+                container.setContainerType(containerEnum);
+            }
+        }
+        var msgType = MessageType.Factory.newInstance();
+        msgType.setStringValue(messageName);
+        service.setMsgName(msgType);
         return type;
     }
 
