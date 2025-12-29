@@ -426,8 +426,9 @@ public class EbicsClient {
         }
         transferManager = new FileTransfer(session);
 
-        configuration.getTraceManager().setTraceDirectory(
-            configuration.getTransferTraceDirectory(user));
+        File traceDir = configuration.getTransferTraceDirectory(user);
+        IOUtils.createDirectories(traceDir);
+        configuration.getTraceManager().setTraceDirectory(traceDir);
 
         try {
             transferManager.fetchFile(orderType, file);
@@ -461,8 +462,9 @@ public class EbicsClient {
         EbicsSession session = createSession(user, product);
         FileTransfer transferManager = new FileTransfer(session);
 
-        configuration.getTraceManager().setTraceDirectory(
-            configuration.getTransferTraceDirectory(user));
+        File traceDir = configuration.getTransferTraceDirectory(user);
+        IOUtils.createDirectories(traceDir);
+        configuration.getTraceManager().setTraceDirectory(traceDir);
 
         try {
             transferManager.fetchFile(downloadParams, file);
